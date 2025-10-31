@@ -211,3 +211,5 @@ data/
 
 # Others
 .DS_Store
+cache/
+geoBoundaries/
