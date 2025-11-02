@@ -7,3 +7,6 @@ seaborn
 geopandas
 osmnx
 shapely
+pyaml
+pydantic
+pytest

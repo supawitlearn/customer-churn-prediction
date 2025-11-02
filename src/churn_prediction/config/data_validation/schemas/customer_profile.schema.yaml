@@ -1,0 +1,186 @@
+# ============================================================================
+# Customer Profile Schema Definition
+# ============================================================================
+# This schema defines the structure, data types, and validation rules for
+# the customer_profile data source. It is referenced by the configuration
+# file and used for data validation during ingestion.
+# 
+# Version: 1.0
+# Last Updated: 2025-11-01
+# Owner: Data Engineering Team
+# ============================================================================
+
+# Schema version for tracking changes
+schema_version: "1.0"
+
+# ============================================================================
+# COLUMN DEFINITIONS
+# ============================================================================
+# Each column defines its data type, constraints, and validation rules
+columns:
+  
+  # ========================================================================
+  # PRIMARY KEY
+  # ========================================================================
+  user_id:
+    description: "Unique identifier for each customer"
+    type: string
+    data_type: VARCHAR(50)
+    nullable: false
+    unique_keys: true
+    constraints:
+      - type: primary_key
+        description: "Primary key constraint"
+      - type: pattern
+        value: "^[A-Za-z0-9_-]+$"
+        description: "Alphanumeric, underscore, and hyphen only"
+  
+  # ========================================================================
+  # CUSTOMER IDENTIFICATION
+  # ========================================================================
+  first_name:
+    description: "Customer's first name"
+    type: string
+    data_type: VARCHAR(100)
+    nullable: false
+    constraints:
+      - type: min_length
+        value: 1
+      - type: max_length
+        value: 100
+      - type: pattern
+        value: "^[a-zA-Z\\s'-]+$"
+        description: "Letters, spaces, apostrophes, and hyphens only"
+  
+  last_name:
+    description: "Customer's last name"
+    type: string
+    data_type: VARCHAR(100)
+    nullable: false
+    constraints:
+      - type: min_length
+        value: 1
+      - type: max_length
+        value: 100
+      - type: pattern
+        value: "^[a-zA-Z\\s'-]+$"
+        description: "Letters, spaces, apostrophes, and hyphens only"
+  
+  # ========================================================================
+  # ACCOUNT INFORMATION
+  # ========================================================================
+  activated:
+    description: "Account activation status"
+    type: string
+    data_type: VARCHAR(20)
+    nullable: false
+    default_value: "pending"
+    constraints:
+      - type: enum
+        values: [yes, no, pending]
+        description: "Valid activation statuses"
+  
+  admin_id:
+    description: "Reference to admin user who manages this account"
+    type: string
+    data_type: VARCHAR(50)
+    nullable: false
+    constraints:
+      - type: foreign_key
+        target_table: admin_users
+        target_column: id
+        description: "Must reference valid admin user"
+  
+  # ========================================================================
+  # PERSONAL INFORMATION
+  # ========================================================================
+  sex:
+    description: "Customer's gender/sex"
+    type: string
+    data_type: VARCHAR(10)
+    nullable: true
+    constraints:
+      - type: enum
+        values: [M, F, Other, Unknown]
+        description: "Valid gender values"
+  
+  foreigner:
+    description: "Flag indicating if customer is a foreigner"
+    type: string
+    data_type: VARCHAR(10)
+    nullable: true
+    constraints:
+      - type: enum
+        values: [yes, no, unknown]
+        description: "Foreigner status"
+  
+  birthdate:
+    description: "Customer's date of birth"
+    type: date
+    data_type: DATE
+    format: "YYYY-MM-DD"
+    nullable: true
+    constraints:
+      - type: date_range
+        min: "1920-01-01"
+        max: "2010-12-31"
+        description: "Reasonable date range (assume minimum 18 years old)"
+      - type: not_future
+        description: "Cannot be a future date"
+  
+  # ========================================================================
+  # TIMESTAMPS
+  # ========================================================================
+  registed_time:
+    description: "Account registration/creation timestamp"
+    type: datetime
+    data_type: TIMESTAMP
+    format: "YYYY-MM-DD HH:MM:SS"
+    nullable: true
+    timezone: "UTC"
+    constraints:
+      - type: not_future
+        description: "Cannot be a future timestamp"
+
+
+# ============================================================================
+# DATA QUALITY RULES
+# ============================================================================
+quality_rules:
+  # Duplicate tolerance
+  allow_record_duplicates: 
+    enabled: false
+    description: "No duplicate records allowed"
+
+  allow_key_duplicates:
+    enabled: false
+    description: "No duplicate keys allowed"
+
+  # Foreign key checks
+  foreign_key_checks:
+    enabled: true
+    description: "Ensure foreign key relationships are valid"
+
+  # Statistical validation (for anomaly detection)
+  statistical_bounds:
+    enabled: true
+    description: "Flag suspicious records outside normal ranges"
+
+# ============================================================================
+# METADATA & DOCUMENTATION
+# # ============================================================================
+metadata:
+  source_table: "customer_profile"
+  record_count_estimate: 1000000
+  update_frequency: "daily"
+  retention_period: "7 years"
+  pii_columns:
+    - first_name
+    - last_name
+    - birthdate
+  sensitive_data: true
+  gdpr_compliant: true
+  business_owner: "Customer Success Team"
+  technical_owner: "Data Engineering Team"
+  last_reviewed: "2025-11-01"
+  next_review: "2025-12-01"
