@@ -23,7 +23,7 @@ from src.churn_prediction.pydantic.data_validation_config import (
     ColumnParameter,
     RuleParameter,
     QualityRulesParameter,
-    DataValidationSchemaConfig,
+    DataValidationConfig,
 )
 
 
@@ -33,10 +33,8 @@ def make_sample_column():
         "type": "integer",
         "data_type": "INT",
         "nullable": False,
-        "unique": True,
-        # constraints may be an empty list or contain ConstraintParameter objects;
-        # here we provide an empty list to exercise default handling.
-        "constraints": [],
+        "primary_keys": True,
+        "foreign_keys": [],
     }
 
 
@@ -51,6 +49,7 @@ def make_sample_quality_rules():
 def make_valid_schema_payload():
     return {
         "schema_version": "1.0.0",
+        "schema_type": "dimension-type2",
         "columns": {
             "user_id": make_sample_column(),
             "email": {
@@ -58,8 +57,8 @@ def make_valid_schema_payload():
                 "type": "string",
                 "data_type": "VARCHAR(255)",
                 "nullable": False,
-                "unique": True,
-                # test that constraints default_factory works when omitted
+                "primary_keys": True,
+                # test that foreign_keys default_factory works when omitted
             },
         },
         "quality_rules": make_sample_quality_rules(),
@@ -73,9 +72,9 @@ def test_columnparameter_accepts_valid_data():
     assert col.type == "integer"
     assert col.data_type == "INT"
     assert col.nullable is False
-    assert col.unique is True
-    # constraints should be a list (default_factory ensures [] when omitted)
-    assert isinstance(col.constraints, list)
+    assert col.primary_keys is True
+    # foreign_keys should be a list (default_factory ensures [] when omitted)
+    assert isinstance(col.foreign_keys, list)
 
 
 def test_ruleparameter_requires_enabled():
@@ -103,9 +102,10 @@ def test_qualityrules_accepts_required_and_optional_fields():
 
 def test_data_validation_schema_config_roundtrip_and_types():
     payload = make_valid_schema_payload()
-    cfg = DataValidationSchemaConfig(**payload)
+    cfg = DataValidationConfig(**payload)
 
     assert cfg.schema_version == "1.0.0"
+    assert cfg.schema_type == "dimension-type2"
     # columns should be parsed into a dict of ColumnParameter
     assert "user_id" in cfg.columns
     assert isinstance(cfg.columns["user_id"], ColumnParameter)
@@ -116,7 +116,7 @@ def test_data_validation_schema_config_roundtrip_and_types():
     assert cfg.metadata["created_by"] == "test-suite"
 
     # serializing to dict should produce JSON-serializable primitives
-    d = cfg.dict()
+    d = cfg.model_dump()
     assert d["schema_version"] == payload["schema_version"]
     assert "columns" in d and "user_id" in d["columns"]
 
@@ -126,32 +126,32 @@ def test_missing_required_fields_in_schema_config_raises():
     payload = make_valid_schema_payload()
     payload.pop("schema_version")
     with pytest.raises(ValidationError):
-        DataValidationSchemaConfig(**payload)
+        DataValidationConfig(**payload)
 
     # missing columns
     payload = make_valid_schema_payload()
     payload.pop("columns")
     with pytest.raises(ValidationError):
-        DataValidationSchemaConfig(**payload)
+        DataValidationConfig(**payload)
 
     # missing quality_rules
     payload = make_valid_schema_payload()
     payload.pop("quality_rules")
     with pytest.raises(ValidationError):
-        DataValidationSchemaConfig(**payload)
+        DataValidationConfig(**payload)
 
 
-def test_column_defaults_for_constraints_and_nullable():
-    # If constraints omitted, default_factory should give an empty list
+def test_column_defaults_for_foreign_keys_and_nullable():
+    # If foreign_keys omitted, default_factory should give an empty list
     col_payload = {
         "description": "Test",
         "type": "string",
         "nullable": True,
     }
-    # Provide minimal required fields except constraints and data_type
+    # Provide minimal required fields except foreign_keys and data_type
     # dataclass/model may require all fields; if 'type' and 'description' are sufficient, this will pass
     col = ColumnParameter(**{"description": "Test", "type": "string"})
-    assert col.constraints == [] or isinstance(col.constraints, list)
+    assert col.foreign_keys == [] or isinstance(col.foreign_keys, list)
     assert isinstance(col.nullable, bool)
 
 
@@ -163,7 +163,7 @@ def test_quality_rules_validation_errors_are_informative():
         "quality_rules": {"allow_record_duplicates": "not-a-dict", "allow_key_duplicates": {"enabled": True}},
     }
     with pytest.raises(ValidationError) as excinfo:
-        DataValidationSchemaConfig(**bad_payload)
+        DataValidationConfig(**bad_payload)
 
     # error should mention the problematic field
     msg = str(excinfo.value)

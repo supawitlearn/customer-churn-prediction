@@ -1,3 +1,30 @@
+
+# ============================================================================
+# TRANSFORMATIONS
+# ============================================================================
+transformations:
+  - column: sex
+    operation: uppercase
+    description: "Normalize gender to uppercase (M/F/Other/Unknown)"
+  
+  - column: foreigner
+    operation: lowercase
+    description: "Normalize to lowercase (yes/no/unknown)"
+  
+  - column: first_name
+    operation: trim_spaces
+    description: "Remove leading/trailing whitespace"
+  
+  - column: last_name
+    operation: trim_spaces
+    description: "Remove leading/trailing whitespace"
+  
+  - column: registed_time
+    operation: convert_timezone
+    target_timezone: "UTC"
+    description: "Ensure all timestamps are in UTC"
+
+
 # ============================================================================
 # Customer Profile Schema Definition
 # ============================================================================
@@ -18,7 +45,6 @@ schema_version: "1.0"
 # ============================================================================
 # Each column defines its data type, constraints, and validation rules
 columns:
-  
   # ========================================================================
   # PRIMARY KEY
   # ========================================================================
@@ -27,13 +53,11 @@ columns:
     type: string
     data_type: VARCHAR(50)
     nullable: false
-    unique_keys: true
+    primary_keys: true
     constraints:
-      - type: primary_key
-        description: "Primary key constraint"
       - type: pattern
-        value: "^[A-Za-z0-9_-]+$"
-        description: "Alphanumeric, underscore, and hyphen only"
+        value: "^[0-9]+$"
+        description: "Numeric only"
   
   # ========================================================================
   # CUSTOMER IDENTIFICATION
@@ -87,8 +111,8 @@ columns:
     nullable: false
     constraints:
       - type: foreign_key
-        target_table: admin_users
-        target_column: id
+        child_table: admin_users
+        child_column: id
         description: "Must reference valid admin user"
   
   # ========================================================================
@@ -137,7 +161,6 @@ columns:
     data_type: TIMESTAMP
     format: "YYYY-MM-DD HH:MM:SS"
     nullable: true
-    timezone: "UTC"
     constraints:
       - type: not_future
         description: "Cannot be a future timestamp"

@@ -71,9 +71,9 @@ def setup_logger(name: str = None, log_level: int = None) -> logging.Logger:
     except Exception as e:
         print(f"Error setting up file handler: {e}")
     
-    # Console handler - logs WARNING and above to console
+    # Console handler - logs all to console
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.WARNING)
+    console_handler.setLevel(level)
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
     

@@ -10,3 +10,6 @@ shapely
 pyaml
 pydantic
 pytest
+ensure
+awswrangler
+pandera
