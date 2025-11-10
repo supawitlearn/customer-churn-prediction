@@ -1,7 +1,12 @@
+# import necessary libraries
 from pydantic import BaseModel
 from typing import Type
 import yaml
 import pandas as pd
+from dateutil import parser
+from pyspark.sql import SparkSession
+
+# import project modules
 from src.churn_prediction.logger import logger
 
 def generate_sk_key(df: pd.DataFrame) -> pd.DataFrame:
@@ -41,3 +46,36 @@ def load_single_config(
     except yaml.YAMLError as e:
         logger.error(f"Error parsing YAML schema: {e}")
         raise
+
+def get_execution_date(date_input) -> str | None:
+    """
+    Convert any date-like input (string, timestamp, etc.)
+    into a standardized string format 'YYYYMMDD'.
+
+    Args:
+        date_input (str | datetime | None): Input date value.
+
+    Returns:
+        str | None: Standardized date string 'YYYYMMDD' or None if invalid.
+    """
+    if date_input is None:
+        return None
+
+    # Try parsing the date using dateutil
+    try:
+        dt = parser.parse(str(date_input), dayfirst=False, yearfirst=True)
+        return dt.strftime('%Y-%m-%d')
+    except Exception:
+        return None
+
+def get_spark() -> SparkSession:
+    """
+    Initialize and return a SparkSession.
+
+    Returns:
+        SparkSession: An active Spark session.
+    """
+    spark = SparkSession.builder \
+        .appName("ChurnPrediction") \
+        .getOrCreate()
+    return spark

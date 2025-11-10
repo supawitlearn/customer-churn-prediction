@@ -1,302 +1,144 @@
-"""Data loaders for S3 and local sources using AWS Wrangler."""
+"""
+Load data from various sources (local, S3) into a Spark DataFrame.
+"""
 
-from typing import Optional, List
+from typing import Any, Optional, Dict
+from pyspark.sql import DataFrame
 from pathlib import Path
-import pandas as pd
 
+from src.churn_prediction.utils.common import get_spark
 from src.churn_prediction.logger import logger
 
-
 class S3Loader:
-    """Load data from AWS S3 using AWS Wrangler.
-    
-    AWS Wrangler simplifies working with data on AWS:
-    - Handles format detection automatically
-    - Supports CSV, Parquet, JSON, Excel, Glue Catalog, etc.
-    - Optimized for S3 operations
-    - Integrates with Pandas seamlessly
     """
+    Load data from S3 using PySpark, with optional AWS Glue DynamicFrame support.
+    """
+    spark = get_spark()
 
-    def __init__(
-        self,
-        region_name: str = "us-east-1",
-        boto3_session=None,
-    ):
-        """Initialize S3 loader.
-
-        Args:
-            region_name (str): AWS region name. Defaults to "us-east-1".
-            boto3_session: Optional boto3 Session object for custom credentials.
-
-        Raises:
-            ImportError: If awswrangler is not installed.
+    @classmethod
+    def ensure_glue_context(cls, glue_context: Optional[Any]) -> Optional[Any]:
         """
+        Return a GlueContext if one was provided or can be created in the current environment.
+        This avoids importing awsglue at module import time when not running on Glue.
+        """
+        if glue_context is not None:
+            return glue_context
         try:
-            import awswrangler as wr
-            self.wr = wr
-        except ImportError:
-            raise ImportError(
-                "awswrangler is required for S3 operations. "
-                "Install it with: pip install awswrangler"
-            )
+            from awsglue.context import GlueContext  # type: ignore
+            return GlueContext(cls.spark.sparkContext)
+        except Exception:
+            return None
 
-        self.region_name = region_name
-        self.boto3_session = boto3_session
-        logger.info(f"S3Loader initialized for region: {region_name}")
-
-    def load_csv(
-        self,
-        path: str,
-        **kwargs,
-    ) -> pd.DataFrame:
-        """Load CSV from S3.
+    @classmethod
+    def load_from_s3_on_glue(
+        cls,
+        s3_path: str,
+        format: str = 'parquet',
+        glue_context: Optional[Any] = None,
+        return_dynamic_frame: bool = False,
+        options: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """
+        Generic loader for S3 using Spark on AWS Glue.
 
         Args:
-            path (str): S3 path (e.g., 's3://bucket/key/file.csv')
-            **kwargs: Additional arguments for wr.s3.read_csv()
+            s3_path: full s3 URI, e.g. "s3://my-bucket/path/to/file_or_prefix"
+            format: data format, e.g. "parquet", "csv", "json"
+            glue_context: optional GlueContext (if you want a DynamicFrame)
+            return_dynamic_frame: if True and GlueContext available, returns a Glue DynamicFrame
+            options: dict of spark read options (e.g. {"header": True, "inferSchema": True} for CSV)
 
         Returns:
-            pd.DataFrame: Loaded data
-
-        Example:
-            >>> loader = S3Loader()
-            >>> df = loader.load_csv('s3://my-bucket/data/customers.csv')
-            >>> print(df.head())
+            pyspark.sql.DataFrame or awsglue.dynamicframe.DynamicFrame
         """
-        try:
-            logger.info(f"Loading CSV from S3: {path}")
-            df = self.wr.s3.read_csv(
-                path,
-                boto3_session=self.boto3_session,
-                **kwargs,
-            )
-            logger.info(f"✓ Successfully loaded {len(df)} rows from S3")
-            return df
-        except Exception as e:
-            logger.error(f"✗ Failed to load CSV from S3: {str(e)}")
-            raise
+        options = options or {}
 
-    def load_parquet(
-        self,
-        path: str,
-        **kwargs,
-    ) -> pd.DataFrame:
-        """Load Parquet from S3.
+        # If user asked for a DynamicFrame, ensure we have a GlueContext (or try to create one)
+        if return_dynamic_frame:
+            glue_ctx = cls.ensure_glue_context(glue_context)
+            if glue_ctx is not None:
+                # Glue DynamicFrame reader expects different option naming for some formats.
+                # Use from_options for generality.
+                fmt = format.lower()
+                format_options = {}
+                # Map some common options for CSV / JSON; Parquet typically needs no format_options.
+                if fmt == "csv":
+                    format_options["withHeader"] = options.get("header", True)
+                    format_options["separator"] = options.get("sep", ",")
+                if fmt == "json":
+                    # Glue expects "multiline" as boolean in format_options
+                    format_options["multiline"] = options.get("multiLine", False)
 
-        Args:
-            path (str): S3 path (e.g., 's3://bucket/key/file.parquet')
-            **kwargs: Additional arguments for wr.s3.read_parquet()
+                connection_options = {"paths": [s3_path], "recurse": True}
+                try:
+                    dynf = glue_ctx.create_dynamic_frame.from_options(
+                        connection_type="s3",
+                        connection_options=connection_options,
+                        format=fmt,
+                        format_options=format_options,
+                    )
+                    return dynf
+                except Exception as e:
+                    logger.warning(f"GlueContext DynamicFrame read failed, falling back to spark.read: {e}")
+            else:
+                logger.warning("return_dynamic_frame=True requested but GlueContext not available; falling back to DataFrame")
 
-        Returns:
-            pd.DataFrame: Loaded data
+        # Use Spark's native reader
+        # Spark expects string values for options; booleans are accepted too but convert for safety
+        spark_options = {k: (str(v).lower() if isinstance(v, bool) else str(v)) for k, v in options.items()}
 
-        Example:
-            >>> loader = S3Loader()
-            >>> df = loader.load_parquet('s3://my-bucket/data/customers.parquet')
-            >>> print(df.shape)
-        """
-        try:
-            logger.info(f"Loading Parquet from S3: {path}")
-            df = self.wr.s3.read_parquet(
-                path,
-                boto3_session=self.boto3_session,
-                **kwargs,
-            )
-            logger.info(f"✓ Successfully loaded {len(df)} rows from S3")
-            return df
-        except Exception as e:
-            logger.error(f"✗ Failed to load Parquet from S3: {str(e)}")
-            raise
-
-    def load_json(
-        self,
-        path: str,
-        **kwargs,
-    ) -> pd.DataFrame:
-        """Load JSON from S3.
-
-        Args:
-            path (str): S3 path (e.g., 's3://bucket/key/file.json')
-            **kwargs: Additional arguments for wr.s3.read_json()
-
-        Returns:
-            pd.DataFrame: Loaded data
-
-        Example:
-            >>> loader = S3Loader()
-            >>> df = loader.load_json('s3://my-bucket/data/customers.json')
-            >>> print(df.info())
-        """
-        try:
-            logger.info(f"Loading JSON from S3: {path}")
-            df = self.wr.s3.read_json(
-                path,
-                boto3_session=self.boto3_session,
-                **kwargs,
-            )
-            logger.info(f"✓ Successfully loaded {len(df)} rows from S3")
-            return df
-        except Exception as e:
-            logger.error(f"✗ Failed to load JSON from S3: {str(e)}")
-            raise
-
-    def load_excel(
-        self,
-        path: str,
-        **kwargs,
-    ) -> pd.DataFrame:
-        """Load Excel from S3.
-
-        Args:
-            path (str): S3 path (e.g., 's3://bucket/key/file.xlsx')
-            **kwargs: Additional arguments for wr.s3.read_excel()
-
-        Returns:
-            pd.DataFrame: Loaded data
-
-        Example:
-            >>> loader = S3Loader()
-            >>> df = loader.load_excel('s3://my-bucket/data/customers.xlsx')
-            >>> print(df.columns)
-        """
-        try:
-            logger.info(f"Loading Excel from S3: {path}")
-            df = self.wr.s3.read_excel(
-                path,
-                boto3_session=self.boto3_session,
-                **kwargs,
-            )
-            logger.info(f"✓ Successfully loaded {len(df)} rows from S3")
-            return df
-        except Exception as e:
-            logger.error(f"✗ Failed to load Excel from S3: {str(e)}")
-            raise
-
-    def load_glue_catalog(
-        self,
-        database: str,
-        table: str,
-        **kwargs,
-    ) -> pd.DataFrame:
-        """Load data from AWS Glue Catalog table.
-
-        Args:
-            database (str): Glue database name
-            table (str): Glue table name
-            **kwargs: Additional arguments for wr.athena.read_sql_table()
-
-        Returns:
-            pd.DataFrame: Loaded data
-
-        Example:
-            >>> loader = S3Loader()
-            >>> df = loader.load_glue_catalog('my_db', 'customers')
-            >>> print(df.head())
-        """
-        try:
-            logger.info(f"Loading from Glue Catalog: {database}.{table}")
-            df = self.wr.athena.read_sql_table(
-                table=table,
-                database=database,
-                boto3_session=self.boto3_session,
-                **kwargs,
-            )
-            logger.info(f"✓ Successfully loaded {len(df)} rows from Glue")
-            return df
-        except Exception as e:
-            logger.error(f"✗ Failed to load from Glue: {str(e)}")
-            raise
-
-
+        df: DataFrame = cls.spark.read.format(format).options(**spark_options).load(s3_path)
+        return df
+    
 class LocalLoader:
-    """Load data from local filesystem."""
+    """
+    Load data from the local filesystem using PySpark.
+    """
+    spark = get_spark()
 
     @staticmethod
     def ensure_file_path(file_path: str) -> Path:
-        file_path = Path(file_path)
-        if not file_path.exists():
-            logger.warning(f"File not found: {file_path}")
-            raise FileNotFoundError(f"File not found: {file_path}")
+        file_path_check = Path(file_path)
+        if not file_path_check.exists():
+            logger.warning(f"File not found: {file_path_check}")
+            raise FileNotFoundError(f"File not found: {file_path_check}")
         return file_path
 
-    @staticmethod
-    def load_csv(file_path: str, **kwargs) -> pd.DataFrame:
-        """Load CSV from local filesystem.
+    @classmethod
+    def load_from_local(
+        cls,
+        file_path: str,
+        delimiter: Optional[str] = None,
+        header: Optional[bool] = None,
+    ) -> DataFrame:
+        """
+        Load a DataFrame from the local filesystem.
 
         Args:
-            file_path (str): Path to CSV file
-            **kwargs: Additional arguments for pd.read_csv()
+            file_path: Path to the local file.
+            delimiter: Delimiter for CSV files (if applicable).
+            header: Whether the file has a header row (if applicable).
 
         Returns:
-            pd.DataFrame: Loaded data
-
-        Example:
-            >>> df = LocalLoader.load_csv('data/customers.csv')
-            >>> print(df.head())
+            pyspark.sql.DataFrame
         """
-        try:
-            file_path = LocalLoader.ensure_file_path(file_path)
-            logger.info(f"Loading CSV from local: {file_path}")
-            df = pd.read_csv(file_path, **kwargs)
-            logger.info(f"✓ Successfully loaded {len(df)} rows")
-            return df
-        except Exception as e:
-            logger.error(f"✗ Failed to load CSV: {str(e)}")
-            raise
+        file_path = cls.ensure_file_path(file_path)
+        if '.' in file_path:
+            format = file_path.split('.')[-1].lower()
+            reader = cls.spark.read.format(format)
+        else:
+            reader = cls.spark.read
 
-    @staticmethod
-    def load_parquet(file_path: str, **kwargs) -> pd.DataFrame:
-        """Load Parquet from local filesystem.
+        if delimiter is not None:
+            reader = reader.option("delimiter", delimiter)
+        if header is not None:
+            reader = reader.option("header", str(header).lower())
 
-        Args:
-            file_path (str): Path to Parquet file
-            **kwargs: Additional arguments for pd.read_parquet()
+        return reader.load(file_path)
 
-        Returns:
-            pd.DataFrame: Loaded data
-
-        Example:
-            >>> df = LocalLoader.load_parquet('data/customers.parquet')
-            >>> print(df.shape)
-        """
-        try:
-            file_path = LocalLoader.ensure_file_path(file_path)
-            logger.info(f"Loading Parquet from local: {file_path}")
-            df = pd.read_parquet(file_path, **kwargs)
-            logger.info(f"✓ Successfully loaded {len(df)} rows")
-            return df
-        except Exception as e:
-            logger.error(f"✗ Failed to load Parquet: {str(e)}")
-            raise
-
-    @staticmethod
-    def load_json(file_path: str, **kwargs) -> pd.DataFrame:
-        """Load JSON from local filesystem.
-
-        Args:
-            file_path (str): Path to JSON file
-            **kwargs: Additional arguments for pd.read_json()
-
-        Returns:
-            pd.DataFrame: Loaded data
-
-        Example:
-            >>> df = LocalLoader.load_json('data/customers.json')
-            >>> print(df.info())
-        """
-        try:
-            file_path = LocalLoader.ensure_file_path(file_path)
-            logger.info(f"Loading JSON from local: {file_path}")
-            df = pd.read_json(file_path, **kwargs)
-            logger.info(f"✓ Successfully loaded {len(df)} rows")
-            return df
-        except Exception as e:
-            logger.error(f"✗ Failed to load JSON: {str(e)}")
-            raise
-
-
-def load_data(source: str, **kwargs) -> pd.DataFrame:
-    """Universal data loader that auto-detects source type.
+def load_data(source: str, **kwargs) -> DataFrame:
+    """
+    Universal data loader that auto-detects source type.
 
     Supports:
     - Local files: 'path/to/file.csv'
@@ -317,38 +159,16 @@ def load_data(source: str, **kwargs) -> pd.DataFrame:
         >>> df = load_data('s3://my-bucket/data/customers.csv')
     """
     if source.startswith("s3://"):
-        # Load from S3 using awswrangler
-        file_type = source.split(".")[-1].lower()
         try:
-            logger.info(f"Auto-detecting format for S3: {source}")
-            if file_type == "csv":
-                return S3Loader.load_csv(source, **kwargs)
-            elif file_type == "parquet":
-                return S3Loader.load_parquet(source, **kwargs)
-            elif file_type == "json":
-                return S3Loader.load_json(source, **kwargs)
-            elif file_type == "xlsx" or file_type == "xls":
-                return S3Loader.load_excel(source, **kwargs)
-            elif file_type == "glue":
-                return S3Loader.load_glue_catalog(source, **kwargs)
-            else:
-                raise ValueError(f"Unsupported file type: {file_type}")
+            logger.info(f"Loading data from S3: {source}")
+            return S3Loader().load_from_s3_on_glue(s3_path=source, **kwargs)
         except Exception as e:
             logger.error(f"✗ Failed to load from S3: {str(e)}")
             raise
     else:
-        # Load from local filesystem
-        file_type = source.split(".")[-1].lower()
         try:
-            logger.info(f"Auto-detecting format for local file: {source}")
-            if file_type == "csv":
-                return LocalLoader.load_csv(source, **kwargs)
-            elif file_type == "parquet":
-                return LocalLoader.load_parquet(source, **kwargs)
-            elif file_type == "json":
-                return LocalLoader.load_json(source, **kwargs)
-            else:
-                raise ValueError(f"Unsupported file type: {file_type}")
+            logger.info(f"Loading data from local: {source}")
+            return LocalLoader().load_from_local(file_path=source, **kwargs)
         except Exception as e:
             logger.error(f"✗ Failed to load from local: {str(e)}")
             raise

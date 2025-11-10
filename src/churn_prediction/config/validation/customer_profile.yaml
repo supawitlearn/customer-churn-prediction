@@ -1,10 +1,7 @@
 # ============================================================================
-# Customer Profile Schema Definition
+# Customer Profile Schema Definition for Validation
 # ============================================================================
-# This schema defines the structure, data types, and validation rules for
-# the customer_profile data source. It is referenced by the configuration
-# file and used for data validation during ingestion.
-# 
+
 # Version: 1.0
 # Last Updated: 2025-11-01
 # Owner: Data Engineering Team
@@ -58,9 +55,6 @@ columns:
     type: string
     data_type: VARCHAR(50)
     nullable: false
-    foreign_keys:
-      child_path: "data/processed/admin_group.parquet"
-      child_column: "admin_id"
   
   # ========================================================================
   # PERSONAL INFORMATION
