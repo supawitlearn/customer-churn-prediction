@@ -35,11 +35,11 @@ class DataTransformationConfig(BaseModel):
         schema_version (str): Version of the schema
         schema_type (str): Type of the schema
         columns (Dict[str, ColumnParameter]): Column configurations
-        transformation (Dict[str, TransformationParameter]): Transformation configurations
+        transformation (Optional[Dict[str, TransformationParameter]]): Transformation configurations
         metadata (Optional[dict]): Metadata information
     """
     schema_version: str = Field(..., description="Version of the schema")
     schema_type: str = Field(..., description="Type of the schema")
     columns: Dict[str, ColumnParameter] = Field(..., description="Column configurations")
-    transformation: Dict[str, TransformationParameter] = Field(..., description="Transformation configurations")
+    transformation: Optional[Dict[str, TransformationParameter]] = Field(None, description="Transformation configurations")
     metadata: Optional[dict] = Field(None, description="Metadata information")

@@ -8,6 +8,7 @@
 # ============================================================================
 
 # Schema version for tracking changes
+name: "customer_profile_dim"
 schema_version: "1.0"
 
 # ============================================================================
@@ -15,19 +16,13 @@ schema_version: "1.0"
 # ============================================================================
 # Each column defines its data type, constraints, and validation rules
 columns:
-  # ========================================================================
-  # PRIMARY KEY
-  # ========================================================================
   user_id:
     description: "Unique identifier for each customer"
     type: string
     data_type: VARCHAR(50)
     nullable: false
     primary_keys: true
-  
-  # ========================================================================
-  # CUSTOMER IDENTIFICATION
-  # ========================================================================
+
   first_name:
     description: "Customer's first name"
     type: string
@@ -40,9 +35,6 @@ columns:
     data_type: VARCHAR(100)
     nullable: false
   
-  # ========================================================================
-  # ACCOUNT INFORMATION
-  # ========================================================================
   activated:
     description: "Account activation status"
     type: string
@@ -56,9 +48,6 @@ columns:
     data_type: VARCHAR(50)
     nullable: false
   
-  # ========================================================================
-  # PERSONAL INFORMATION
-  # ========================================================================
   sex:
     description: "Customer's gender/sex"
     type: string
@@ -78,9 +67,6 @@ columns:
     format: "YYYY-MM-DD"
     nullable: true
   
-  # ========================================================================
-  # TIMESTAMPS
-  # ========================================================================
   registed_time:
     description: "Account registration/creation timestamp"
     type: datetime
@@ -111,7 +97,7 @@ quality_rules:
 # METADATA & DOCUMENTATION
 # # ============================================================================
 metadata:
-  source_table: "customer_profile"
+  source_table: "customer_profile_dim"
   record_count_estimate: 1000000
   update_frequency: "daily"
   retention_period: "7 years"

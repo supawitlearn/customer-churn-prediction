@@ -1,17 +1,15 @@
 # ============================================================================
-# Customer Profile Schema Definition for Transformation
+# Customer Profile Schema Definition for Ingestion
 # ============================================================================
 
 # Version: 1.0
-# Last Updated: 2025-11-01
+# Last Updated: 2025-11-14
 # Owner: Data Engineering Team
 # ============================================================================
 
 # Schema version for tracking changes
+name: "customer_group_master"
 schema_version: "1.0"
-
-# Type of schema (e.g., dimensional, transactional)
-schema_type: "dimensional-type1"
 
 # ============================================================================
 # COLUMN DEFINITIONS
@@ -19,69 +17,45 @@ schema_type: "dimensional-type1"
 columns:
   user_id:
     description: "Unique identifier for each customer"
-    type: string
+    target_column: userid
 
   first_name:
     description: "Customer's first name"
-    type: string
-  
+    target_column: first_name
+
   last_name:
     description: "Customer's last name"
-    type: string
+    target_column: last_name
 
   activated:
     description: "Account activation status"
-    type: string
+    target_column: activated
   
   admin_id:
     description: "Reference to admin user who manages this account"
-    type: string
+    target_column: adminid
 
   sex:
     description: "Customer's gender/sex"
-    type: string
+    target_column: sex
   
   foreigner:
     description: "Flag indicating if customer is a foreigner"
-    type: string
+    target_column: foreigner
   
   birthdate:
     description: "Customer's date of birth"
-    type: date
+    target_column: birthdate
 
   registed_time:
     description: "Account registration/creation timestamp"
-    type: timestamp
-
-# ============================================================================
-# Transformations
-# ============================================================================
-transformation:
-  first_date_of_month:
-    description: "Set date to the first day of the month"
-    kind: first_date_of_month
-    parameters:
-      target_column: "birthdate"
-
-  date_range:
-    description: "Ensure date falls within a specified range"
-    kind: date_range
-    parameters:
-      target_column: "birthdate"
-      min: "Y=-80"
-      max: "Y=-18"
-
-  not_future:
-    description: "Ensure timestamp is not in the future"
-    kind: not_future
-    parameters:
-      target_column: "registed_time"
+    target_column: registedtime
 
 # ============================================================================
 # METADATA & DOCUMENTATION
 # ============================================================================
 metadata:
-  source_table: "customer_profile"
+  source_table: "customer_profile_dim"
   record_count_estimate: 1000000
   update_frequency: "daily"
   retention_period: "7 years"

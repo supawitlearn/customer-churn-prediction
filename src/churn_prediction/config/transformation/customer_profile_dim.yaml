@@ -1,0 +1,94 @@
+# ============================================================================
+# Customer Profile Schema Definition for Transformation
+# ============================================================================
+
+# Version: 1.0
+# Last Updated: 2025-11-01
+# Owner: Data Engineering Team
+# ============================================================================
+
+# Schema version for tracking changes
+name: "customer_profile_dim"
+schema_version: "1.0"
+
+# Type of schema (e.g., dimensional, transactional)
+schema_type: "dimensional-type2"
+
+# ============================================================================
+# COLUMN DEFINITIONS
+# ============================================================================
+columns:
+  user_id:
+    description: "Unique identifier for each customer"
+    type: string
+
+  first_name:
+    description: "Customer's first name"
+    type: string
+  
+  last_name:
+    description: "Customer's last name"
+    type: string
+
+  activated:
+    description: "Account activation status"
+    type: string
+  
+  admin_id:
+    description: "Reference to admin user who manages this account"
+    type: string
+
+  sex:
+    description: "Customer's gender/sex"
+    type: string
+  
+  foreigner:
+    description: "Flag indicating if customer is a foreigner"
+    type: string
+  
+  birthdate:
+    description: "Customer's date of birth"
+    type: date
+
+  registed_time:
+    description: "Account registration/creation timestamp"
+    type: timestamp
+
+# ============================================================================
+# Transformations
+# ============================================================================
+transformation:
+  first_date_of_month:
+    description: "Set date to the first day of the month"
+    kind: first_date_of_month
+    parameters:
+      target_column: "birthdate"
+
+  date_range:
+    description: "Ensure date falls within a specified range"
+    kind: date_range
+    parameters:
+      target_column: "birthdate"
+      min: "Y=-80"
+      max: "Y=-18"
+
+  not_future:
+    description: "Ensure timestamp is not in the future"
+    kind: not_future
+    parameters:
+      target_column: "registed_time"
+
+# ============================================================================
+# METADATA & DOCUMENTATION
+# ============================================================================
+metadata:
+  source_table: "customer_profile_dim"
+  record_count_estimate: 1000000
+  update_frequency: "daily"
+  retention_period: "7 years"
+  sensitive_data: true
+  gdpr_compliant: true
+  business_owner: "Customer Success Team"
+  technical_owner: "Data Engineering Team"
+  last_reviewed: "2025-11-01"
+  next_review: "2025-12-01"

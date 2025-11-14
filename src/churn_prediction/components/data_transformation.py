@@ -185,16 +185,17 @@ class DataTransformer:
             # Cast data types first
             df = self.cast_data_types(df)
             
-            # Get available operations
-            operations_map = self.get_transformation_operations()
-            
             # Apply each transformation operation
             input_df = df
-            for _, transform in self.transformation_config.items():
-                kind = transform.kind
-                params = transform.parameters
-                params['df'] = input_df
-                input_df = operations_map[kind](**params)
+            if self.transformation_config:
+                for _, transform in self.transformation_config.items():
+                    kind = transform.kind
+                    params = transform.parameters
+                    params['df'] = input_df
+                    func = getattr(self, kind, None)
+                    if func is None:
+                        raise AttributeError(f"Transformation function '{kind}' not found.")
+                    input_df = func(**params)
 
             # Add dl_load_ts timestamps
             now_ts = datetime.now()

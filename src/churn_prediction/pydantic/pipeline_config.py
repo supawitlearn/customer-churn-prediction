@@ -89,8 +89,6 @@ class PipelineConfig(BaseModel):
     """
     name: str = Field(..., description="Name of the pipeline")
     version: str = Field(..., description="Version of the pipeline")
-    description: str = Field(..., description="Description of the pipeline")
-    owner: str = Field(..., description="Owner of the pipeline")
     ingestion: Optional[IngestionParameter] = Field(None, description="Ingestion configuration")
     validation: Optional[ValidationConfig] = Field(None, description="Validation configuration")
     transformation: Optional[TransformationParameter] = Field(None, description="Transformation configuration")
