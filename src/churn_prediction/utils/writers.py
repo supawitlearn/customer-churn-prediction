@@ -196,39 +196,6 @@ class S3Writer:
             raise
 
 
-# Example usage (Glue job or local Spark):
-if __name__ == "__main__":
-    from pyspark.sql import SparkSession
-
-    spark = SparkSession.builder.getOrCreate()
-
-    # Example DataFrame
-    df = spark.createDataFrame(
-        [
-            (1, "Alice", "US"),
-            (2, "Bob", "CA"),
-            (3, "Carol", "US"),
-        ],
-        ["id", "name", "country"],
-    )
-
-    # Write to S3 as parquet, partitioned by country, coalesce to 1 file per partition
-    result = write_df_to_s3(
-        df,
-        "s3://my-bucket/output/customer_profile/",
-        format="parquet",
-        spark=spark,
-        partition_by=["country"],
-        mode="overwrite",
-        compression="snappy",
-        coalesce=None,
-        repartition=3,
-        options={},
-        use_dynamic_frame=False,
-    )
-    print(result)
-
-
 class LocalWriter:
     """
     Save data to local filesystem using PySpark.

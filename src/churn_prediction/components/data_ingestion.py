@@ -76,7 +76,7 @@ class DataIngester:
             df = df.withColumn(col, df[col].cast('string'))
         return df
 
-    def ingester(self) -> None:
+    def run(self) -> None:
         """
         Ingest data from source, process it, and return the dataframe.
 

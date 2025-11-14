@@ -268,7 +268,7 @@ class DataValidator:
         return clean_df, errors
 
     # Main validator orchestration
-    def validator(self) -> None:
+    def run(self) -> None:
         """
         Run the validation pipeline:
         1. Load data

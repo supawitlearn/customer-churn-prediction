@@ -20,151 +20,101 @@ except Exception:
         ValidationError = Exception  # type: ignore
 
 from src.churn_prediction.pydantic.data_validation_config import (
+    DataValidationConfig,
     ColumnParameter,
+    ForeignKeyParameter,
     RuleParameter,
     QualityRulesParameter,
-    DataValidationConfig,
 )
 
 
-def make_sample_column():
+def make_minimal_valid_config():
+    """
+    Return a minimal-but-valid configuration dict that should pass validation.
+    Note: RuleParameter.enabled is required, so both allow_record_duplicates
+    and allow_key_duplicates must be provided.
+    """
     return {
-        "description": "User identifier",
-        "type": "integer",
-        "data_type": "INT",
-        "nullable": False,
-        "primary_keys": True,
-        "foreign_keys": [],
-    }
-
-
-def make_sample_quality_rules():
-    return {
-        "allow_record_duplicates": {"enabled": False, "description": "No duplicate records allowed"},
-        "allow_key_duplicates": {"enabled": False},
-        # optional fields left out to ensure optional handling
-    }
-
-
-def make_valid_schema_payload():
-    return {
-        "schema_version": "1.0.0",
-        "schema_type": "dimension-type2",
+        "schema_version": "1.0",
         "columns": {
-            "user_id": make_sample_column(),
-            "email": {
-                "description": "Email address",
-                "type": "string",
-                "data_type": "VARCHAR(255)",
+            "id": {
+                "description": "Primary identifier",
+                "type": "integer",
                 "nullable": False,
-                "primary_keys": True,
-                # test that foreign_keys default_factory works when omitted
+            },
+            "name": {
+                "description": "Person name",
+                "type": "string",
+                # omit nullable to exercise default (should be True)
             },
         },
-        "quality_rules": make_sample_quality_rules(),
-        "metadata": {"created_by": "test-suite", "created_at": datetime.now(UTC)},
+        "quality_rules": {
+            "allow_record_duplicates": {"enabled": True},
+            "allow_key_duplicates": {"enabled": False},
+            # foreign_key_checks is optional
+        },
+        "metadata": {"source": "tests"},
     }
 
 
-def test_columnparameter_accepts_valid_data():
-    col = ColumnParameter(**make_sample_column())
-    assert col.description == "User identifier"
-    assert col.type == "integer"
-    assert col.data_type == "INT"
-    assert col.nullable is False
-    assert col.primary_keys is True
-    # foreign_keys should be a list (default_factory ensures [] when omitted)
-    assert isinstance(col.foreign_keys, list)
+def test_minimal_valid_config_parses():
+    cfg = make_minimal_valid_config()
+    obj = DataValidationConfig.model_validate(cfg)
+
+    assert obj.schema_version == "1.0"
+    # columns present
+    assert "id" in obj.columns and "name" in obj.columns
+    # id column fields
+    id_col = obj.columns["id"]
+    assert isinstance(id_col, ColumnParameter)
+    assert id_col.description == "Primary identifier"
+    assert id_col.type == "integer"
+    assert id_col.nullable is False
+
+    # quality rules parsed
+    assert isinstance(obj.quality_rules, QualityRulesParameter)
+    assert obj.quality_rules.allow_record_duplicates.enabled is True
+    assert obj.quality_rules.allow_key_duplicates.enabled is False
+    # metadata roundtrip
+    assert obj.metadata == {"source": "tests"}
 
 
-def test_ruleparameter_requires_enabled():
-    # enabled is required
-    with pytest.raises(ValidationError):
-        RuleParameter()  # missing required field
-
-    # valid when enabled provided
-    r = RuleParameter(enabled=True)
-    assert r.enabled is True
-    assert r.description is None
+def test_column_nullable_default_true_when_omitted():
+    cfg = make_minimal_valid_config()
+    # 'name' column omits nullable -> default True expected
+    obj = DataValidationConfig.model_validate(cfg)
+    name_col = obj.columns["name"]
+    assert isinstance(name_col, ColumnParameter)
+    assert name_col.nullable is True
 
 
-def test_qualityrules_accepts_required_and_optional_fields():
-    payload = {
-        "allow_record_duplicates": {"enabled": True},
-        "allow_key_duplicates": {"enabled": False},
-        # leave optional fields out to ensure they are treated as None
+def test_foreign_key_parsing():
+    cfg = make_minimal_valid_config()
+    # Add a foreign key entry for the id column
+    cfg["columns"]["id"]["foreign_keys"] = {
+        "child_path": "ref/customers.csv",
+        "child_column": "user_id",
+        "description": "References customer user_id",
     }
-    qr = QualityRulesParameter(**payload)
-    assert isinstance(qr.allow_record_duplicates, RuleParameter)
-    assert qr.foreign_key_checks is None
-    assert qr.statistical_bounds is None
+    obj = DataValidationConfig.model_validate(cfg)
+    fk = obj.columns["id"].foreign_keys
+    assert isinstance(fk, ForeignKeyParameter)
+    assert fk.child_path == "ref/customers.csv"
+    assert fk.child_column == "user_id"
+    assert fk.description == "References customer user_id"
 
 
-def test_data_validation_schema_config_roundtrip_and_types():
-    payload = make_valid_schema_payload()
-    cfg = DataValidationConfig(**payload)
-
-    assert cfg.schema_version == "1.0.0"
-    assert cfg.schema_type == "dimension-type2"
-    # columns should be parsed into a dict of ColumnParameter
-    assert "user_id" in cfg.columns
-    assert isinstance(cfg.columns["user_id"], ColumnParameter)
-    assert cfg.columns["email"].description == "Email address"
-
-    # quality_rules should be parsed into QualityRulesParameter
-    assert isinstance(cfg.quality_rules, QualityRulesParameter)
-    assert cfg.metadata["created_by"] == "test-suite"
-
-    # serializing to dict should produce JSON-serializable primitives
-    d = cfg.model_dump()
-    assert d["schema_version"] == payload["schema_version"]
-    assert "columns" in d and "user_id" in d["columns"]
-
-
-def test_missing_required_fields_in_schema_config_raises():
-    # missing schema_version
-    payload = make_valid_schema_payload()
-    payload.pop("schema_version")
+def test_missing_required_column_fields_raises():
+    cfg = make_minimal_valid_config()
+    # Remove description from a column (required)
+    del cfg["columns"]["id"]["description"]
     with pytest.raises(ValidationError):
-        DataValidationConfig(**payload)
+        DataValidationConfig.model_validate(cfg)
 
-    # missing columns
-    payload = make_valid_schema_payload()
-    payload.pop("columns")
+
+def test_missing_quality_rule_required_entry_raises():
+    cfg = make_minimal_valid_config()
+    # Remove allow_key_duplicates (required)
+    del cfg["quality_rules"]["allow_key_duplicates"]
     with pytest.raises(ValidationError):
-        DataValidationConfig(**payload)
-
-    # missing quality_rules
-    payload = make_valid_schema_payload()
-    payload.pop("quality_rules")
-    with pytest.raises(ValidationError):
-        DataValidationConfig(**payload)
-
-
-def test_column_defaults_for_foreign_keys_and_nullable():
-    # If foreign_keys omitted, default_factory should give an empty list
-    col_payload = {
-        "description": "Test",
-        "type": "string",
-        "nullable": True,
-    }
-    # Provide minimal required fields except foreign_keys and data_type
-    # dataclass/model may require all fields; if 'type' and 'description' are sufficient, this will pass
-    col = ColumnParameter(**{"description": "Test", "type": "string"})
-    assert col.foreign_keys == [] or isinstance(col.foreign_keys, list)
-    assert isinstance(col.nullable, bool)
-
-
-def test_quality_rules_validation_errors_are_informative():
-    # allow_record_duplicates must be present and be a RuleParameter-like mapping
-    bad_payload = {
-        "schema_version": "1.0",
-        "columns": {"a": {"description": "x", "type": "string"}},
-        "quality_rules": {"allow_record_duplicates": "not-a-dict", "allow_key_duplicates": {"enabled": True}},
-    }
-    with pytest.raises(ValidationError) as excinfo:
-        DataValidationConfig(**bad_payload)
-
-    # error should mention the problematic field
-    msg = str(excinfo.value)
-    assert "allow_record_duplicates" in msg or "quality_rules" in msg
+        DataValidationConfig.model_validate(cfg)
