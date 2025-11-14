@@ -86,20 +86,20 @@ class DataIngester:
         try:
             logger.info("Starting data ingestion...")
 
-            # 1. Load data
+            # Load data
             df = load_data(source=self.input_path, header=True)
 
-            # 2. Select columns
+            # Select columns
             df = self.select_columns(df)
 
-            # 3. Rename and cast columns
+            # Rename and cast columns
             df = self.rename_and_cast_columns(df)
 
-            # 4. Flag save time
+            # Flag save time
             df = df.withColumn("dl_data_dt", F.lit(self.execution_date).cast('date'))
             df = df.withColumn("dl_load_ts", F.lit(datetime.now()))
 
-            # 5. Save raw data
+            # Save raw data
             write_data(df, file_path=self.output_path)
 
             logger.info("Data ingestion completed.")
