@@ -1,9 +1,9 @@
 # ============================================================================
-# Customer Profile Schema Definition for Ingestion
+# Customer Group Master Schema Definition for Transformation
 # ============================================================================
 
 # Version: 1.0
-# Last Updated: 2025-11-14
+# Last Updated: 2025-11-01
 # Owner: Data Engineering Team
 # ============================================================================
 
@@ -11,51 +11,46 @@
 name: "customer_group_dim"
 schema_version: "1.0"
 
+# Type of schema (e.g., dimensional, transactional)
+schema_type: "dimensional-type1"
+
 # ============================================================================
 # COLUMN DEFINITIONS
 # ============================================================================
 columns:
-  user_id:
-    description: "Unique identifier for each customer"
-    target_column: userid
+  group_id:
+    description: "Unique identifier for each customer group"
+    type: string
 
-  first_name:
-    description: "Customer's first name"
-    target_column: first_name
-
-  last_name:
-    description: "Customer's last name"
-    target_column: last_name
-
-  activated:
-    description: "Account activation status"
-    target_column: activated
+  group_code:
+    description: "Code representing the customer group"
+    type: string
   
-  admin_id:
-    description: "Reference to admin user who manages this account"
-    target_column: adminid
+  group_name:
+    description: "Name of the customer group"
+    type: string
 
-  sex:
-    description: "Customer's gender/sex"
-    target_column: sex
+# ============================================================================
+# Transformations
+# ============================================================================
+transformation:
+  uppercase:
+    description: "Convert text to uppercase"
+    kind: uppercase
+    parameters:
+      target_column: "group_code"
+
+strip_whitespace:
+    description: "Remove leading and trailing whitespace"
+    kind: strip_whitespace
+    parameters:
+      target_column: "group_name"
   
-  foreigner:
-    description: "Flag indicating if customer is a foreigner"
-    target_column: foreigner
-  
-  birthdate:
-    description: "Customer's date of birth"
-    target_column: birthdate
-
-  registed_time:
-    description: "Account registration/creation timestamp"
-    target_column: registedtime
-
 # ============================================================================
 # METADATA & DOCUMENTATION
 # ============================================================================
 metadata:
-  source_table: "customer_profile_dim"
+  source_table: "customer_group_dim"
   record_count_estimate: 1000000
   update_frequency: "daily"
   retention_period: "7 years"

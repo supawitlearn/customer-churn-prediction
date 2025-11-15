@@ -1,5 +1,5 @@
 # ============================================================================
-# Customer Group Master Schema Definition for Validation
+# Station Master Schema Definition for Validation
 # ============================================================================
 
 # Version: 1.0
@@ -8,7 +8,7 @@
 # ============================================================================
 
 # Schema version for tracking changes
-name: "customer_group_master"
+name: "station_dim"
 schema_version: "1.0"
 
 # ============================================================================
@@ -16,27 +16,41 @@ schema_version: "1.0"
 # ============================================================================
 # Each column defines its data type, constraints, and validation rules
 columns:
-  # ========================================================================
-  # PRIMARY KEY
-  # ========================================================================
-  group_id:
-    description: "Unique identifier for each group"
+  station_id:
+    description: "Unique identifier for each station"
     type: string
     data_type: VARCHAR(50)
     nullable: false
     primary_keys: true
   
-  group_code:
-    description: "Unique code for each group"
+  station_code:
+    description: "Code representing the station"
     type: string
     data_type: VARCHAR(100)
     nullable: false
   
-  group_name:
-    description: "Name of the group"
+  station_status:
+    description: "Status of the station"
     type: string
     data_type: VARCHAR(100)
+    nullable: false
+    primary_keys: true
+
+  station_name:
+    description: "Name of the station"
+    type: string
+    data_type: VARCHAR(255)
     nullable: true
+
+  latitude:
+    description: "Latitude coordinate of the station"
+    type: float
+    nullable: false
+
+  longitude:
+    description: "Longitude coordinate of the station"
+    type: float
+    nullable: false
 
 # ============================================================================
 # DATA QUALITY RULES
@@ -53,9 +67,9 @@ quality_rules:
 
 # ============================================================================
 # METADATA & DOCUMENTATION
-# # ============================================================================
+# ============================================================================
 metadata:
-  source_table: "customer_profile_dim"
+  source_table: "station_dim"
   record_count_estimate: 1000000
   update_frequency: "daily"
   retention_period: "7 years"

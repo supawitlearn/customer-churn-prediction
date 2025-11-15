@@ -40,7 +40,7 @@ columns:
     type: string
     data_type: VARCHAR(20)
     nullable: false
-    default_value: "pending"
+    primary_keys: true
   
   admin_id:
     description: "Reference to admin user who manages this account"
@@ -74,7 +74,6 @@ columns:
     format: "YYYY-MM-DD HH:MM:SS"
     nullable: true
 
-
 # ============================================================================
 # DATA QUALITY RULES
 # ============================================================================
@@ -95,7 +94,7 @@ quality_rules:
 
 # ============================================================================
 # METADATA & DOCUMENTATION
-# # ============================================================================
+# ============================================================================
 metadata:
   source_table: "customer_profile_dim"
   record_count_estimate: 1000000

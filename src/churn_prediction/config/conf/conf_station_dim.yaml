@@ -1,0 +1,35 @@
+# ============================================================================
+# Station Master Data Source Configuration
+# ============================================================================
+
+# Version: 1.0
+# Last Updated: 2025-11-14
+# Owner: Data Engineering Team
+# ============================================================================
+name: "station_dim"
+version: "1.0"
+# ============================================================================
+ingestion:
+  config_path: "src/churn_prediction/config/ingestion/station_dim.yaml"
+  input:
+    type: Local
+    file_path: "data/station_coop.csv"
+  output:
+    type: Local
+    file_path: "data/raw/station_dim/${execution_date}/"
+validation:
+  config_path: "src/churn_prediction/config/validation/station_dim.yaml"
+  input:
+    type: Local
+    file_path: "data/raw/station_dim/${execution_date}/"
+  output:
+    type: Local
+    file_path: "data/validated/station_dim/"
+transformation:
+  config_path: "src/churn_prediction/config/transformation/station_dim.yaml"
+  input:
+    type: Local
+    file_path: "data/validated/station_dim/"
+  output:
+    type: Local
+    file_path: "data/curated/station_dim/"

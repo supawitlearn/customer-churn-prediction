@@ -1,0 +1,43 @@
+# ============================================================================
+# Customer Group Master Schema Definition for Ingestion
+# ============================================================================
+
+# Version: 1.0
+# Last Updated: 2025-11-01
+# Owner: Data Engineering Team
+# ============================================================================
+
+# Schema version for tracking changes
+name: "customer_group_dim"
+schema_version: "1.0"
+
+# ============================================================================
+# COLUMN DEFINITIONS
+# ============================================================================
+columns:
+  group_id:
+    description: "Unique identifier for each group"
+    target_column: groupid
+
+  group_code:
+    description: "Code representing the customer group"
+    target_column: groupcode
+
+  group_name:
+    description: "Name of the customer group"
+    target_column: name
+
+# ============================================================================
+# METADATA & DOCUMENTATION
+# ============================================================================
+metadata:
+  source_table: "customer_group_dim"
+  record_count_estimate: 1000000
+  update_frequency: "daily"
+  retention_period: "7 years"
+  sensitive_data: true
+  gdpr_compliant: true
+  business_owner: "Customer Success Team"
+  technical_owner: "Data Engineering Team"
+  last_reviewed: "2025-11-14"
+  next_review: "2025-12-01"

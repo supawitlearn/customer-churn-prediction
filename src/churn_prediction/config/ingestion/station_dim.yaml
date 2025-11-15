@@ -1,0 +1,55 @@
+# ============================================================================
+# Customer Group Master Schema Definition for Ingestion
+# ============================================================================
+
+# Version: 1.0
+# Last Updated: 2025-11-01
+# Owner: Data Engineering Team
+# ============================================================================
+
+# Schema version for tracking changes
+name: "station_dim"
+schema_version: "1.0"
+
+# ============================================================================
+# COLUMN DEFINITIONS
+# ============================================================================
+columns:
+  station_id:
+    description: "Unique identifier for each station"
+    target_column: stationid
+
+  station_code:
+    description: "Code representing the station"
+    target_column: stationcode
+
+  station_status:
+    description: "Status of the station"
+    target_column: stationstatus
+
+  station_name:
+    description: "Name of the station"
+    target_column: name
+
+  latitude:
+    description: "Latitude coordinate of the station"
+    target_column: latitude
+
+  longitude:
+    description: "Longitude coordinate of the station"
+    target_column: longitude
+
+# ============================================================================
+# METADATA & DOCUMENTATION
+# ============================================================================
+metadata:
+  source_table: "station_dim"
+  record_count_estimate: 1000000
+  update_frequency: "daily"
+  retention_period: "7 years"
+  sensitive_data: true
+  gdpr_compliant: true
+  business_owner: "Customer Success Team"
+  technical_owner: "Data Engineering Team"
+  last_reviewed: "2025-11-14"
+  next_review: "2025-12-01"

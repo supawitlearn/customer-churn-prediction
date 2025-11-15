@@ -8,33 +8,63 @@
 # ============================================================================
 
 # Schema version for tracking changes
-name: "customer_group_master"
+name: "station_dim"
 schema_version: "1.0"
 
 # Type of schema (e.g., dimensional, transactional)
-schema_type: "dimensional-type1"
+schema_type: "dimensional-type2"
 
 # ============================================================================
 # COLUMN DEFINITIONS
 # ============================================================================
 columns:
-  group_id:
-    description: "Unique identifier for each customer group"
+  station_id:
+    description: "Unique identifier for each station"
     type: string
 
-  group_code:
-    description: "Code representing the customer group"
+  station_code:
+    description: "Code representing the station"
     type: string
+
+  station_status:
+    description: "Status of the station"
+    type: string
+
+  station_name:
+    description: "Name of the station"
+    type: string
+
+  latitude:
+    description: "Latitude coordinate of the station"
+    type: float
+
+  longitude:
+    description: "Longitude coordinate of the station"
+    type: float
+
+# ============================================================================
+# Transformations
+# ============================================================================
+transformation:
+  uppercase:
+    description: "Convert text to uppercase"
+    kind: uppercase
+    parameters:
+      target_column: 
+        - station_code
+        - station_status
+
+  strip_whitespace:
+      description: "Remove leading and trailing whitespace"
+      kind: strip_whitespace
+      parameters:
+        target_column: "station_name"
   
-  group_name:
-    description: "Name of the customer group"
-    type: string
-
 # ============================================================================
 # METADATA & DOCUMENTATION
 # ============================================================================
 metadata:
-  source_table: "customer_group_master"
+  source_table: "customer_group_dim"
   record_count_estimate: 1000000
   update_frequency: "daily"
   retention_period: "7 years"

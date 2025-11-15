@@ -78,6 +78,13 @@ transformation:
     parameters:
       target_column: "registed_time"
 
+  uppercase:
+    description: "Convert text to uppercase"
+    kind: uppercase
+    parameters:
+      target_column: 
+        - activated
+
 # ============================================================================
 # METADATA & DOCUMENTATION
 # ============================================================================

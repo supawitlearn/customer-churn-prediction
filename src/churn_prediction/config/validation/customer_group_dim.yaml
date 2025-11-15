@@ -1,5 +1,5 @@
 # ============================================================================
-# Customer Group Master Schema Definition for Ingestion
+# Customer Group Master Schema Definition for Validation
 # ============================================================================
 
 # Version: 1.0
@@ -8,30 +8,51 @@
 # ============================================================================
 
 # Schema version for tracking changes
-name: "customer_group_master"
+name: "customer_group_dim"
 schema_version: "1.0"
 
 # ============================================================================
 # COLUMN DEFINITIONS
 # ============================================================================
+# Each column defines its data type, constraints, and validation rules
 columns:
   group_id:
     description: "Unique identifier for each group"
-    target_column: groupid
-
+    type: string
+    data_type: VARCHAR(50)
+    nullable: false
+    primary_keys: true
+  
   group_code:
-    description: "Code representing the customer group"
-    target_column: groupcode
-
+    description: "Unique code for each group"
+    type: string
+    data_type: VARCHAR(100)
+    nullable: false
+  
   group_name:
-    description: "Name of the customer group"
-    target_column: name
+    description: "Name of the group"
+    type: string
+    data_type: VARCHAR(100)
+    nullable: true
+
+# ============================================================================
+# DATA QUALITY RULES
+# ============================================================================
+quality_rules:
+  # Duplicate tolerance
+  allow_record_duplicates: 
+    enabled: false
+    description: "No duplicate records allowed"
+
+  allow_key_duplicates:
+    enabled: false
+    description: "No duplicate keys allowed"
 
 # ============================================================================
 # METADATA & DOCUMENTATION
 # ============================================================================
 metadata:
-  source_table: "customer_group_master"
+  source_table: "customer_group_dim"
   record_count_estimate: 1000000
   update_frequency: "daily"
   retention_period: "7 years"
@@ -39,5 +60,5 @@ metadata:
   gdpr_compliant: true
   business_owner: "Customer Success Team"
   technical_owner: "Data Engineering Team"
-  last_reviewed: "2025-11-14"
+  last_reviewed: "2025-11-01"
   next_review: "2025-12-01"
