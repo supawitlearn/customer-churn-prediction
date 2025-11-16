@@ -1,0 +1,64 @@
+# ============================================================================
+# Holiday Master Schema Definition for Validation
+# ============================================================================
+
+# Version: 1.0
+# Last Updated: 2025-11-01
+# Owner: Data Engineering Team
+# ============================================================================
+
+# Schema version for tracking changes
+name: "holiday_master"
+schema_version: "1.0"
+
+# ============================================================================
+# COLUMN DEFINITIONS
+# ============================================================================
+# Each column defines its data type, constraints, and validation rules
+columns:
+  date:
+    description: "Date of the holiday"
+    type: date
+    data_type: DATE
+    nullable: false
+    primary_keys: true
+  
+  day_of_week:
+    description: "Day of the week for the holiday"
+    type: string
+    data_type: VARCHAR(100)
+    nullable: true
+  
+  type:
+    description: "Type of the holiday"
+    type: string
+    data_type: VARCHAR(100)
+    nullable: true
+
+# ============================================================================
+# DATA QUALITY RULES
+# ============================================================================
+quality_rules:
+  # Duplicate tolerance
+  allow_record_duplicates: 
+    enabled: false
+    description: "No duplicate records allowed"
+
+  allow_key_duplicates:
+    enabled: false
+    description: "No duplicate keys allowed"
+
+# ============================================================================
+# METADATA & DOCUMENTATION
+# ============================================================================
+metadata:
+  source_table: "holiday_master"
+  record_count_estimate: 1000000
+  update_frequency: "daily"
+  retention_period: "7 years"
+  sensitive_data: true
+  gdpr_compliant: true
+  business_owner: "Customer Success Team"
+  technical_owner: "Data Engineering Team"
+  last_reviewed: "2025-11-01"
+  next_review: "2025-12-01"

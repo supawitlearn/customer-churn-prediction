@@ -1,0 +1,46 @@
+# ============================================================================
+# Holiday Master Schema Definition for Transformation
+# ============================================================================
+
+# Version: 1.0
+# Last Updated: 2025-11-01
+# Owner: Data Engineering Team
+# ============================================================================
+
+# Schema version for tracking changes
+name: "holiday_master"
+schema_version: "1.0"
+
+# Type of schema (e.g., dimensional, transactional)
+schema_type: "dimensional-type1"
+
+# ============================================================================
+# COLUMN DEFINITIONS
+# ============================================================================
+columns:
+  date:
+    description: "Date of the holiday"
+    type: date
+
+  day_of_week:
+    description: "Day of the week for the holiday"
+    type: string
+
+  type:
+    description: "Type of the holiday"
+    type: string
+  
+# ============================================================================
+# METADATA & DOCUMENTATION
+# ============================================================================
+metadata:
+  source_table: "holiday_master"
+  record_count_estimate: 1000000
+  update_frequency: "daily"
+  retention_period: "7 years"
+  sensitive_data: true
+  gdpr_compliant: true
+  business_owner: "Customer Success Team"
+  technical_owner: "Data Engineering Team"
+  last_reviewed: "2025-11-01"
+  next_review: "2025-12-01"
