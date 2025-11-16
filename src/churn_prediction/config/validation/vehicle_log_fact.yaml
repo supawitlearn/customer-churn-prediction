@@ -1,5 +1,5 @@
 # ============================================================================
-# Station Dimension Schema Definition for Validation
+# Vehicle Log Fact Schema Definition for Validation
 # ============================================================================
 
 # Version: 1.0
@@ -8,7 +8,7 @@
 # ============================================================================
 
 # Schema version for tracking changes
-name: "station_dim"
+name: "vehicle_log_fact"
 schema_version: "1.0"
 
 # ============================================================================
@@ -16,41 +16,29 @@ schema_version: "1.0"
 # ============================================================================
 # Each column defines its data type, constraints, and validation rules
 columns:
-  station_id:
-    description: "Unique identifier for each station"
+  reservation_id:
+    description: "Unique identifier for each reservation"
     type: string
     data_type: VARCHAR(50)
     nullable: false
     primary_keys: true
+    foreign_keys:
+      child_path: "data/curated/reservation_txn_fact"
+      child_column: "reservation_id"
   
-  station_code:
-    description: "Code representing the station"
-    type: string
-    data_type: VARCHAR(100)
-    nullable: false
-  
-  station_status:
-    description: "Status of the station"
-    type: string
-    data_type: VARCHAR(100)
+  latitude:
+    description: "Latitude coordinate of the vehicle"
+    type: float
+    data_type: FLOAT
     nullable: false
     primary_keys: true
-
-  station_name:
-    description: "Name of the station"
-    type: string
-    data_type: VARCHAR(255)
-    nullable: true
-
-  latitude:
-    description: "Latitude coordinate of the station"
-    type: float
-    nullable: false
-
+  
   longitude:
-    description: "Longitude coordinate of the station"
+    description: "Longitude coordinate of the vehicle"
     type: float
+    data_type: FLOAT
     nullable: false
+    primary_keys: true
 
 # ============================================================================
 # DATA QUALITY RULES
@@ -69,7 +57,7 @@ quality_rules:
 # METADATA & DOCUMENTATION
 # ============================================================================
 metadata:
-  source_table: "station_dim"
+  source_table: "vehicle_log_fact"
   record_count_estimate: 1000000
   update_frequency: "daily"
   retention_period: "7 years"

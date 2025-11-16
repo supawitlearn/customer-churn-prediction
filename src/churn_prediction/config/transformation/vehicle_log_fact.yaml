@@ -1,5 +1,5 @@
 # ============================================================================
-# Customer Group Dimension Schema Definition for Ingestion
+# Vehicle Log Fact Schema Definition for Transformation
 # ============================================================================
 
 # Version: 1.0
@@ -8,30 +8,33 @@
 # ============================================================================
 
 # Schema version for tracking changes
-name: "customer_group_dim"
+name: "vehicle_log_fact"
 schema_version: "1.0"
+
+# Type of schema (e.g., dimensional, transactional)
+schema_type: "fact"
 
 # ============================================================================
 # COLUMN DEFINITIONS
 # ============================================================================
 columns:
-  group_id:
-    description: "Unique identifier for each group"
-    target_column: groupid
+  reservation_id:
+    description: "Unique identifier for each reservation"
+    type: string
 
-  group_code:
-    description: "Code representing the customer group"
-    target_column: groupcode
-
-  group_name:
-    description: "Name of the customer group"
-    target_column: name
-
+  latitude:
+    description: "Latitude coordinate of the vehicle"
+    type: float
+  
+  longitude:
+    description: "Longitude coordinate of the vehicle"
+    type: float
+  
 # ============================================================================
 # METADATA & DOCUMENTATION
 # ============================================================================
 metadata:
-  source_table: "customer_group_dim"
+  source_table: "vehicle_log_fact"
   record_count_estimate: 1000000
   update_frequency: "daily"
   retention_period: "7 years"
@@ -39,5 +42,5 @@ metadata:
   gdpr_compliant: true
   business_owner: "Customer Success Team"
   technical_owner: "Data Engineering Team"
-  last_reviewed: "2025-11-14"
+  last_reviewed: "2025-11-01"
   next_review: "2025-12-01"
