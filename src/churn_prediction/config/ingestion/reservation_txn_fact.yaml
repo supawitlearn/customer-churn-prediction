@@ -1,0 +1,99 @@
+# ============================================================================
+# Reservation Transaction Fact Schema Definition for Ingestion
+# ============================================================================
+
+# Version: 1.0
+# Last Updated: 2025-11-14
+# Owner: Data Engineering Team
+# ============================================================================
+
+# Schema version for tracking changes
+name: "reservation_txn_fact"
+schema_version: "1.0"
+
+# ============================================================================
+# COLUMN DEFINITIONS
+# ============================================================================
+columns:
+  reservation_id:
+    description: "Unique identifier for each reservation"
+    target_column: reservationno
+
+  reservation_state:
+    description: "State of the reservation"
+    target_column: reservationstate
+
+  user_id:
+    description: "Unique identifier for each customer"
+    target_column: userid
+
+  group_id:
+    description: "Identifier for the user group"
+    target_column: groupid
+
+  payment_method:
+    description: "Payment method used for the reservation"
+    target_column: payment
+  
+  station_id:
+    description: "Identifier for the station"
+    target_column: stationid
+  
+  promotion_id:
+    description: "Identifier for the promotion"
+    target_column: promotionid
+  
+  promotion_code:
+    description: "Code for the promotion"
+    target_column: promotioncode
+  
+  reserve_start_time:
+    description: "Start time of the reservation"
+    target_column: reservestarttime
+  
+  reserve_stop_time:
+    description: "Stop time of the reservation"
+    target_column: reservestoptime
+  
+  hour_price:
+    description: "Price per hour for the reservation"
+    target_column: hourprice
+  
+  distance_price:
+    description: "Price per distance unit for the reservation"
+    target_column: distanceprice
+  
+  discount:
+    description: "Discount applied to the reservation"
+    target_column: discount
+  
+  total_price:
+    description: "Total price of the reservation"
+    target_column: totalprice
+  
+  total_charge:
+    description: "Total charge for the reservation"
+    target_column: chargetotal
+
+  category:
+    description: "Category of the reservation"
+    target_column: category
+
+  log_time:
+    description: "Timestamp of the reservation log"
+    target_column: logtime
+
+# ============================================================================
+# METADATA & DOCUMENTATION
+# ============================================================================
+metadata:
+  source_table: "reservation_txn_fact"
+  record_count_estimate: 1000000
+  update_frequency: "daily"
+  retention_period: "7 years"
+  sensitive_data: true
+  gdpr_compliant: true
+  business_owner: "Customer Success Team"
+  technical_owner: "Data Engineering Team"
+  last_reviewed: "2025-11-01"
+  next_review: "2025-12-01"

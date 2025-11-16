@@ -87,11 +87,6 @@ quality_rules:
     enabled: false
     description: "No duplicate keys allowed"
 
-  # Foreign key checks
-  foreign_key_checks:
-    enabled: true
-    description: "Ensure foreign key relationships are valid"
-
 # ============================================================================
 # METADATA & DOCUMENTATION
 # ============================================================================

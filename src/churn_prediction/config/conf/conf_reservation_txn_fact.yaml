@@ -1,0 +1,35 @@
+# ============================================================================
+# Reservation Transaction Fact Data Source Configuration
+# ============================================================================
+
+# Version: 1.0
+# Last Updated: 2025-11-14
+# Owner: Data Engineering Team
+# ============================================================================
+name: "reservation_txn_fact"
+version: "1.0"
+# ============================================================================
+ingestion:
+  config_path: "src/churn_prediction/config/ingestion/reservation_txn_fact.yaml"
+  input:
+    type: Local
+    file_path: "data/reservation_coop.csv"
+  output:
+    type: Local
+    file_path: "data/raw/reservation_txn_fact/${execution_date}/"
+validation:
+  config_path: "src/churn_prediction/config/validation/reservation_txn_fact.yaml"
+  input:
+    type: Local
+    file_path: "data/raw/reservation_txn_fact/${execution_date}/"
+  output:
+    type: Local
+    file_path: "data/validated/reservation_txn_fact/"
+transformation:
+  config_path: "src/churn_prediction/config/transformation/reservation_txn_fact.yaml"
+  input:
+    type: Local
+    file_path: "data/validated/reservation_txn_fact/"
+  output:
+    type: Local
+    file_path: "data/curated/reservation_txn_fact/"

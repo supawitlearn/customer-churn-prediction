@@ -1,0 +1,164 @@
+# ============================================================================
+# Reservation Transaction Fact Schema Definition for Validation
+# ============================================================================
+
+# Version: 1.0
+# Last Updated: 2025-11-01
+# Owner: Data Engineering Team
+# ============================================================================
+
+# Schema version for tracking changes
+name: "reservation_txn_fact"
+schema_version: "1.0"
+
+# ============================================================================
+# COLUMN DEFINITIONS
+# ============================================================================
+# Each column defines its data type, constraints, and validation rules
+columns:
+  reservation_id:
+    description: "Unique identifier for each reservation"
+    type: string
+    data_type: VARCHAR(50)
+    nullable: false
+    primary_keys: true
+
+  reservation_state:
+    description: "State of the reservation"
+    type: string
+    data_type: VARCHAR(50)
+    nullable: false
+    primary_keys: true
+  
+  user_id:
+    description: "Unique identifier for each customer"
+    type: string
+    data_type: VARCHAR(50)
+    nullable: false
+    foreign_keys:
+      child_path: "data/curated/customer_profile_dim"
+      child_column: "user_id"
+
+  group_id:
+    description: "Identifier for the user group"
+    type: string
+    data_type: VARCHAR(50)
+    nullable: false
+    foreign_keys:
+      child_path: "data/curated/customer_group_dim"
+      child_column: "group_id"
+
+  payment_method:
+    description: "Payment method used for the reservation"
+    type: string
+    data_type: VARCHAR(50)
+    nullable: true
+
+  station_id:
+    description: "Identifier for the station"
+    type: string
+    data_type: VARCHAR(50)
+    nullable: false
+    foreign_keys:
+      child_path: "data/curated/station_dim"
+      child_column: "station_id"
+
+  promotion_id:
+    description: "Identifier for the promotion"
+    type: string
+    data_type: VARCHAR(50)
+    nullable: true
+
+  promotion_code:
+    description: "Code for the promotion"
+    type: string
+    data_type: VARCHAR(100)
+    nullable: true
+
+  reserve_start_time:
+    description: "Start time of the reservation"
+    type: timestamp
+    data_type: TIMESTAMP
+    nullable: false
+
+  reserve_stop_time:
+    description: "Stop time of the reservation"
+    type: timestamp
+    data_type: TIMESTAMP
+    nullable: false
+
+  hour_price:
+    description: "Price per hour for the reservation"
+    type: float
+    data_type: FLOAT
+    nullable: true
+
+  distance_price:
+    description: "Price per distance unit for the reservation"
+    type: float
+    data_type: FLOAT
+    nullable: true
+
+  discount:
+    description: "Discount applied to the reservation"
+    type: float
+    data_type: FLOAT
+    nullable: true
+
+  total_price:
+    description: "Total price of the reservation"
+    type: float
+    data_type: FLOAT
+    nullable: false
+
+  total_charge:
+    description: "Total charge for the reservation"
+    type: float
+    data_type: FLOAT
+    nullable: true
+
+  category:
+    description: "Category of the reservation"
+    type: string
+    data_type: VARCHAR(100)
+    nullable: true
+
+  log_time:
+    description: "Timestamp of the reservation log"
+    type: timestamp
+    data_type: TIMESTAMP
+    nullable: false
+    primary_keys: true
+
+# ============================================================================
+# DATA QUALITY RULES
+# ============================================================================
+quality_rules:
+  # Duplicate tolerance
+  allow_record_duplicates: 
+    enabled: false
+    description: "No duplicate records allowed"
+
+  allow_key_duplicates:
+    enabled: false
+    description: "No duplicate keys allowed"
+
+  # Foreign key checks
+  foreign_key_checks:
+    enabled: true
+    description: "Ensure foreign key relationships are valid"
+
+# ============================================================================
+# METADATA & DOCUMENTATION
+# ============================================================================
+metadata:
+  source_table: "customer_profile_dim"
+  record_count_estimate: 1000000
+  update_frequency: "daily"
+  retention_period: "7 years"
+  sensitive_data: true
+  gdpr_compliant: true
+  business_owner: "Customer Success Team"
+  technical_owner: "Data Engineering Team"
+  last_reviewed: "2025-11-01"
+  next_review: "2025-12-01"
