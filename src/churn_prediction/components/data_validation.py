@@ -84,7 +84,7 @@ class DataValidator:
         grouped = df.groupBy(*cols_to_check).count()
         duplicates = grouped.filter("count > 1").drop("count")
 
-        if duplicates.rdd.isEmpty():
+        if duplicates.count() == 0:
             # no duplicates
             return {"error": [], "clean_df": df}
 

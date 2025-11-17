@@ -18,7 +18,7 @@ schema_type: "fact"
 # COLUMN DEFINITIONS
 # ============================================================================
 columns:
-  reservation_id:
+  txn_id:
     description: "Unique identifier for each reservation"
     type: string
 
@@ -58,6 +58,10 @@ columns:
     description: "Stop time of the reservation"
     type: timestamp
 
+  distance:
+    description: "Distance covered during the reservation"
+    type: float
+
   hour_price:
     description: "Price per hour for the reservation"
     type: float
@@ -82,7 +86,7 @@ columns:
     description: "Category of the reservation"
     type: string
 
-  log_time:
+  txn_ts:
     description: "Timestamp of the reservation log"
     type: timestamp
 

@@ -57,13 +57,17 @@ def main():
 
     This function retrieves command-line arguments and calls the execute function.
     """
-    config_path = sys.argv[1] if len(sys.argv) > 1 else None
-    execution_date = sys.argv[2] if len(sys.argv) > 2 else None
+    try:
+        config_path = sys.argv[1] if len(sys.argv) > 1 else None
+        execution_date = sys.argv[2] if len(sys.argv) > 2 else None
 
-    execute(
-        config_path=config_path,
-        execution_date=execution_date,
-    )
-
+        execute(
+            config_path=config_path,
+            execution_date=execution_date,
+        )
+    except Exception as e:
+        logger.error(f"Error in main execution: {e}")
+        raise e
+    
 if __name__ == "__main__":
     main()

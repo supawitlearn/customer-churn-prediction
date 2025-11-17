@@ -13,7 +13,7 @@ ingestion:
   config_path: "src/churn_prediction/config/ingestion/reservation_txn_fact.yaml"
   input:
     type: Local
-    file_path: "data/reservation_coop.csv"
+    file_path: "data/joined_reservation.csv"
   output:
     type: Local
     file_path: "data/raw/reservation_txn_fact/${execution_date}/"

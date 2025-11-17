@@ -15,7 +15,7 @@ schema_version: "1.0"
 # COLUMN DEFINITIONS
 # ============================================================================
 columns:
-  reservation_id:
+  txn_id:
     description: "Unique identifier for each reservation"
     target_column: reservationno
 
@@ -54,6 +54,10 @@ columns:
   reserve_stop_time:
     description: "Stop time of the reservation"
     target_column: reservestoptime
+
+  distance:
+    description: "Distance covered during the reservation"
+    target_column: distance
   
   hour_price:
     description: "Price per hour for the reservation"
@@ -79,7 +83,7 @@ columns:
     description: "Category of the reservation"
     target_column: category
 
-  log_time:
+  txn_ts:
     description: "Timestamp of the reservation log"
     target_column: logtime
 

@@ -138,7 +138,7 @@ class DataTransformer:
                                            .otherwise(F.col(target_column)))
         return df
 
-    def not_future(self, df: DataFrame, target_column: str) -> DataFrame:
+    def not_future(self, df: DataFrame, target_column: Union[str, List[str]]) -> DataFrame:
         """
         Transform date column to not exceed the execution date.
 
@@ -150,21 +150,73 @@ class DataTransformer:
             DataFrame: Transformed DataFrame
         """
         logger.info(f"Transforming {target_column} to not exceed execution date {self.execution_date}...")
-        col_type = self.columns_config.get(target_column).type
-        df = df.withColumn(target_column, F.when(F.col(target_column) > self.execution_date, F.lit(self.execution_date).cast(col_type))
-                                           .otherwise(F.col(target_column)))
+        if isinstance(target_column, list):
+            for column in target_column:
+                col_type = self.columns_config.get(column).type
+                df = df.withColumn(column, F.when(F.col(column) > self.execution_date, F.lit(self.execution_date).cast(col_type))
+                                               .otherwise(F.col(column)))
+        else:
+            col_type = self.columns_config.get(target_column).type
+            df = df.withColumn(target_column, F.when(F.col(target_column) > self.execution_date, F.lit(self.execution_date).cast(col_type))
+                                               .otherwise(F.col(target_column)))
         return df
 
+    def uppercase(self, df: DataFrame, target_column: Union[str, List[str]]) -> DataFrame:
+        """
+        Transform string column(s) to uppercase.
+        
+        Args:
+            df (DataFrame): Input Spark DataFrame
+            target_column (str | List[str]): Name(s) of the string column(s)
+            
+        Returns:
+            DataFrame: Transformed DataFrame
+        """
+        logger.info(f"Transforming {target_column} to uppercase...")
+        if isinstance(target_column, list):
+            for column in target_column:
+                df = df.withColumn(column, F.upper(F.col(column)))
+        else:
+            df = df.withColumn(target_column, F.upper(F.col(target_column)))
+        return df
+    
+    def lowercase(self, df: DataFrame, target_column: Union[str, List[str]]) -> DataFrame:
+        """
+        Transform string column(s) to lowercase.
+        
+        Args:
+            df (DataFrame): Input Spark DataFrame
+            target_column (str | List[str]): Name(s) of the string column(s)
+            
+        Returns:
+            DataFrame: Transformed DataFrame
+        """
+        logger.info(f"Transforming {target_column} to lowercase...")
+        if isinstance(target_column, list):
+            for column in target_column:
+                df = df.withColumn(column, F.lower(F.col(column)))
+        else:
+            df = df.withColumn(target_column, F.lower(F.col(target_column)))
+        return df
 
-    def get_transformation_operations(self) -> Dict[str, Any]:
+    def strip_whitespace(self, df: DataFrame, target_column: Union[str, List[str]]) -> DataFrame:
         """
-        Get available transformation operations.
+        Transform string column(s) by stripping leading and trailing whitespace.
+        
+        Args:
+            df (DataFrame): Input Spark DataFrame
+            target_column (str | List[str]): Name(s) of the string column(s)
+            
+        Returns:
+            DataFrame: Transformed DataFrame
         """
-        return {
-            "first_date_of_month": self.first_date_of_month,
-            "date_range": self.date_range,
-            "not_future": self.not_future
-        }
+        logger.info(f"Transforming {target_column} by stripping whitespace...")
+        if isinstance(target_column, list):
+            for column in target_column:
+                df = df.withColumn(column, F.trim(F.col(column)))
+        else:
+            df = df.withColumn(target_column, F.trim(F.col(target_column)))
+        return df
 
     def run(self) -> None:
         """

@@ -16,7 +16,7 @@ schema_version: "1.0"
 # ============================================================================
 # Each column defines its data type, constraints, and validation rules
 columns:
-  reservation_id:
+  txn_id:
     description: "Unique identifier for each reservation"
     type: string
     data_type: VARCHAR(50)
@@ -87,6 +87,12 @@ columns:
     data_type: TIMESTAMP
     nullable: false
 
+  distance:
+    description: "Distance covered during the reservation"
+    type: float
+    data_type: FLOAT
+    nullable: true
+
   hour_price:
     description: "Price per hour for the reservation"
     type: float
@@ -123,7 +129,7 @@ columns:
     data_type: VARCHAR(100)
     nullable: true
 
-  log_time:
+  txn_ts:
     description: "Timestamp of the reservation log"
     type: timestamp
     data_type: TIMESTAMP

@@ -1,5 +1,5 @@
 # ============================================================================
-# Vehicle Log Fact Schema Definition for Ingestion
+# App Log Fact Schema Definition for Ingestion
 # ============================================================================
 
 # Version: 1.0
@@ -8,30 +8,46 @@
 # ============================================================================
 
 # Schema version for tracking changes
-name: "vehicle_log_fact"
+name: "app_log_fact"
 schema_version: "1.0"
 
 # ============================================================================
 # COLUMN DEFINITIONS
 # ============================================================================
 columns:
-  reservation_id:
-    description: "Unique identifier for each reservation"
-    target_column: reservationno
+  app_log_id:
+    description: "Unique identifier for each app log"
+    target_column: applogno
 
-  latitude:
-    description: "Latitude coordinate of the vehicle"
-    target_column: latitude
+  app_log_ts:
+    description: "Timestamp of the app log entry"
+    target_column: applogtime
 
-  longitude:
-    description: "Longitude coordinate of the vehicle"
-    target_column: longitude
+  user_id:
+    description: "User identifier associated with the app log"
+    target_column: userid
+
+  device_type:  
+    description: "Type of device used (e.g., ANDROID, iOS)"
+    target_column: devicetype
+
+  event_type:
+    description: "Type of event logged"
+    target_column: function
+
+  parameter_1:
+    description: "First parameter associated with the event"
+    target_column: param
+
+  parameter_2:
+    description: "Second parameter associated with the event"
+    target_column: param2
 
 # ============================================================================
 # METADATA & DOCUMENTATION
 # ============================================================================
 metadata:
-  source_table: "vehicle_log_fact"
+  source_table: "app_log_fact"
   record_count_estimate: 1000000
   update_frequency: "daily"
   retention_period: "7 years"

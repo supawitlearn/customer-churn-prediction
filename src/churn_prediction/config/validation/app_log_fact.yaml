@@ -1,5 +1,5 @@
 # ============================================================================
-# Vehicle Log Fact Schema Definition for Validation
+# App Log Fact Schema Definition for Validation
 # ============================================================================
 
 # Version: 1.0
@@ -8,7 +8,7 @@
 # ============================================================================
 
 # Schema version for tracking changes
-name: "vehicle_log_fact"
+name: "app_log_fact"
 schema_version: "1.0"
 
 # ============================================================================
@@ -16,29 +16,51 @@ schema_version: "1.0"
 # ============================================================================
 # Each column defines its data type, constraints, and validation rules
 columns:
-  reservation_id:
-    description: "Unique identifier for each reservation"
+  app_log_id:
+    description: "Unique identifier for each app log"
     type: string
     data_type: VARCHAR(50)
     nullable: false
     primary_keys: true
+  
+  app_log_ts:
+    description: "Timestamp of the app log entry"
+    type: timestamp
+    data_type: TIMESTAMP
+    nullable: false
+  
+  user_id:
+    description: "User identifier associated with the app log"
+    type: string
+    data_type: VARCHAR(50)
+    nullable: false
     foreign_keys:
-      child_path: "data/curated/reservation_txn_fact"
-      child_column: "reservation_id"
-  
-  latitude:
-    description: "Latitude coordinate of the vehicle"
-    type: float
-    data_type: FLOAT
+      child_path: "data/curated/customer_profile_dim"
+      child_column: "user_id"
+
+  device_type:  
+    description: "Type of device used (e.g., ANDROID, iOS)"
+    type: string
+    data_type: VARCHAR(50)
+    nullable: true
+
+  event_type:
+    description: "Type of event logged"
+    type: string
+    data_type: VARCHAR(100)
     nullable: false
-    primary_keys: true
-  
-  longitude:
-    description: "Longitude coordinate of the vehicle"
-    type: float
-    data_type: FLOAT
-    nullable: false
-    primary_keys: true
+
+  parameter_1:
+    description: "First parameter associated with the event"
+    type: string
+    data_type: VARCHAR(100)
+    nullable: true
+
+  parameter_2:
+    description: "Second parameter associated with the event"
+    type: int
+    data_type: INT
+    nullable: true
 
 # ============================================================================
 # DATA QUALITY RULES
@@ -52,6 +74,11 @@ quality_rules:
   allow_key_duplicates:
     enabled: false
     description: "No duplicate keys allowed"
+
+  # Foreign key checks
+  foreign_key_checks:
+    enabled: true
+    description: "Ensure foreign key relationships are valid"
 
 # ============================================================================
 # METADATA & DOCUMENTATION
