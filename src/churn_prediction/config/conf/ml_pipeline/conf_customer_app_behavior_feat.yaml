@@ -1,22 +1,20 @@
 # ============================================================================
-# Station Location Profile Feature Data Source Configuration
+# Customer App Behavior Feature Data Source Configuration
 # ============================================================================
 
 # Version: 1.0
 # Last Updated: 2025-11-14
 # Owner: Data Engineering Team
 # ============================================================================
-name: "station_location_profile_feat"
+name: "customer_app_behavior_feat"
 version: "1.0"
 # ============================================================================
 feature_engineering:
-  module: 'StationLocationProfileFeatures'
+  module: 'CustomerAppBehaviorFeatures'
   input:
-    station_dim:
+    app_behavior_feat:
       type: Local
-      file_path: 'data/curated/station_dim'
+      file_path: 'data/feature/app_behavior_feat'
   output:
     type: Local
-    file_path: 'data/feature/station_location_profile_feat'
-  resources:
-    poi_groups: 'src/churn_prediction/constants/feature_engineering/poi_groups.yaml'
+    file_path: 'data/feature/customer_app_behavior_feat/${execution_date}'

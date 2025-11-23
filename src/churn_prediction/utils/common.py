@@ -1,13 +1,27 @@
 # import necessary libraries
-from pydantic import BaseModel
-from typing import Type
 import yaml
 import pandas as pd
+from pydantic import BaseModel
+from typing import Type
 from dateutil import parser
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+from typing import Optional
 from pyspark.sql import SparkSession
 
 # import project modules
 from src.churn_prediction.logger import logger
+
+class AttrDict(dict):
+    """Dictionary subclass that allows attribute-style access to its items."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__dict__ = self
+
+    @classmethod
+    def from_dict(cls, data: dict):
+        """Recursively convert a dictionary to an AttrDict."""
+        return cls({k: cls.from_dict(v) if isinstance(v, dict) else v for k, v in data.items()})
 
 def generate_sk_key(df: pd.DataFrame) -> pd.DataFrame:
     """Generate a surrogate key (SK) by assigning a unique integer to each row.
@@ -47,7 +61,7 @@ def load_single_config(
         logger.error(f"Error parsing YAML schema: {e}")
         raise
 
-def get_execution_date(date_input) -> str | None:
+def get_execution_date(date_input: Optional[str] = None) -> Optional[str]:
     """
     Convert any date-like input (string, timestamp, etc.)
     into a standardized string format 'YYYYMMDD'.
@@ -59,7 +73,10 @@ def get_execution_date(date_input) -> str | None:
         str | None: Standardized date string 'YYYYMMDD' or None if invalid.
     """
     if date_input is None:
-        return None
+        today = datetime.now()
+        first_day_this_month = today.replace(day=1)
+        last_day_prev_month = first_day_this_month - relativedelta(days=1)
+        return last_day_prev_month.strftime("%Y-%m-%d")
 
     # Try parsing the date using dateutil
     try:
@@ -79,3 +96,22 @@ def get_spark() -> SparkSession:
         .appName("ChurnPrediction") \
         .getOrCreate()
     return spark
+
+def load_yaml(file_path: str) -> dict:
+    """
+    Load a YAML file and return its contents as a dictionary.
+
+    Args:
+        file_path (str): Path to the YAML file.
+    """
+    try:
+        with open(file_path, 'r') as file:
+            data = yaml.safe_load(file)
+        logger.info(f"Successfully loaded YAML file: {file_path}")
+        return AttrDict.from_dict(data)
+    except FileNotFoundError:
+        logger.error(f"YAML file not found: {file_path}")
+        raise
+    except yaml.YAMLError as e:
+        logger.error(f"Error parsing YAML file: {e}")
+        raise

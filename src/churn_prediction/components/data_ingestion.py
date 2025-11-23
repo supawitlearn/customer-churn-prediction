@@ -9,7 +9,7 @@ from pyspark.sql import DataFrame
 from src.churn_prediction.logger import logger
 from src.churn_prediction.pydantic.data_ingestion_config import DataIngestionConfig
 from src.churn_prediction.pydantic.pipeline_config import PipelineConfig
-from src.churn_prediction.utils.common import load_single_config, get_execution_date, get_spark
+from src.churn_prediction.utils.common import load_single_config, get_execution_date
 from src.churn_prediction.utils.loaders import load_data
 from src.churn_prediction.utils.writers import write_data
 
@@ -30,7 +30,7 @@ class DataIngester:
             # Load config
             self.config_path: Path = Path(config_path)
             self.pipeline_config: PipelineConfig = load_single_config(PipelineConfig, self.config_path)
-            self.execution_date: str = get_execution_date(execution_date) if execution_date else datetime.now().strftime("%Y-%m-%d")
+            self.execution_date: str = get_execution_date(execution_date)
 
             self.ingestion_path: Path = Path(self.pipeline_config.ingestion.config_path)
             self.ingestion_config: DataIngestionConfig = load_single_config(DataIngestionConfig, self.ingestion_path)

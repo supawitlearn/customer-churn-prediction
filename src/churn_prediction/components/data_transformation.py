@@ -32,7 +32,7 @@ class DataTransformer:
             # Load config
             self.config_path = Path(config_path)
             self.pipeline_config = load_single_config(PipelineConfig, self.config_path)
-            self.execution_date = get_execution_date(execution_date) if execution_date else datetime.now().strftime("%Y-%m-%d")
+            self.execution_date = get_execution_date(execution_date)
 
             self.transformation_path = Path(self.pipeline_config.transformation.config_path)
             self.transformation_config = load_single_config(DataTransformationConfig, self.transformation_path)

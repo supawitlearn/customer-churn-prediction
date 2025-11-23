@@ -1,0 +1,32 @@
+# ============================================================================
+# Reservation Behavioral Feature Data Source Configuration
+# ============================================================================
+
+# Version: 1.0
+# Last Updated: 2025-11-14
+# Owner: Data Engineering Team
+# ============================================================================
+name: "reservation_behavioral_feat"
+version: "1.0"
+# ============================================================================
+feature_engineering:
+  module: 'ReservationBehavioralFeatures'
+  input:
+    reservation_txn_fact:
+      type: Local
+      file_path: 'data/curated/reservation_txn_fact'
+    customer_profile_dim:
+      type: Local
+      file_path: 'data/curated/customer_profile_dim'
+    customer_group_dim:
+      type: Local
+      file_path: 'data/curated/customer_group_dim'
+    station_location_profile_feat:
+      type: Local
+      file_path: 'data/feature/station_location_profile_feat'
+    holiday_master:
+      type: Local
+      file_path: 'data/curated/holiday_master'
+  output:
+    type: Local
+    file_path: 'data/feature/reservation_behavioral_feat'

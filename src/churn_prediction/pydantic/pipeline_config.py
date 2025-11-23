@@ -43,6 +43,20 @@ class TransformationParameter(BaseModel):
     input: Dict[str, Any] = Field(..., description="Input data source configuration")
     output: Dict[str, Any] = Field(..., description="Output data destination configuration")
 
+class FeatureEngineeringParameter(BaseModel):
+    """
+    Feature Engineering Parameter Model
+
+    Attributes:
+        module (str): Module name for feature engineering
+        input (Dict[str, Any]): Input data source configuration
+        output (Dict[str, Any]): Output data destination configuration
+        resources (Dict[str, Any]): Additional resources for feature engineering
+    """
+    module: str = Field(..., description="Module name for feature engineering")
+    input: Dict[str, Any] = Field(..., description="Input data source configuration")
+    output: Dict[str, Any] = Field(..., description="Output data destination configuration")
+    resources: Optional[Dict[str, Any]] = Field(None, description="Additional resources for feature engineering")
 
 class TrainingParameter(BaseModel):
     """
@@ -92,5 +106,6 @@ class PipelineConfig(BaseModel):
     ingestion: Optional[IngestionParameter] = Field(None, description="Ingestion configuration")
     validation: Optional[ValidationConfig] = Field(None, description="Validation configuration")
     transformation: Optional[TransformationParameter] = Field(None, description="Transformation configuration")
+    feature_engineering: Optional[FeatureEngineeringParameter] = Field(None, description="Feature engineering configuration")
     training: Optional[TrainingParameter] = Field(None, description="Training configuration")
     inference: Optional[InferenceParameter] = Field(None, description="Inference configuration")

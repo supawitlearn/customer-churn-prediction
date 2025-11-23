@@ -33,7 +33,7 @@ class DataValidator:
             # Load config using project's config loader(s)
             self.config_path: Path = Path(config_path)
             self.pipeline_config: PipelineConfig = load_single_config(PipelineConfig, self.config_path)
-            self.execution_date: str = get_execution_date(execution_date) if execution_date else datetime.now().strftime("%Y-%m-%d")
+            self.execution_date: str = get_execution_date(execution_date)
 
             self.validation_path: Path = Path(self.pipeline_config.validation.config_path)
             self.validation_config: DataValidationConfig = load_single_config(DataValidationConfig, self.validation_path)
