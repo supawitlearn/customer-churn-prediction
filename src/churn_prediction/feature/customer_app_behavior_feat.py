@@ -85,18 +85,18 @@ def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months:
 
     agg_df = base_df.groupBy("user_id").agg(
         # session stats
-        F.countDistinct("period").alias(f"cnt_sessions{suffix}"),
+        F.countDistinct("period").alias(f"app_cnt_sessions{suffix}"),
         F.sum(F.when(F.col("event_type") == "login", 1).otherwise(0)).alias(
-            f"cnt_login_events{suffix}"
+            f"app_cnt_login_events{suffix}"
         ),
         F.sum(
             F.when(F.col("event_type") == "checkavailablevehiclelist", 1).otherwise(0)
-        ).alias(f"cnt_checkvehicle_events{suffix}"),
+        ).alias(f"app_cnt_checkvehicle_events{suffix}"),
         F.sum(F.when(F.col("event_type") == "getstationlist", 1).otherwise(0)).alias(
-            f"cnt_getstation_events{suffix}"
+            f"app_cnt_getstation_events{suffix}"
         ),
         F.sum(F.when(F.col("event_type") == "estimateextension", 1).otherwise(0)).alias(
-            f"cnt_extension_events{suffix}"
+            f"app_cnt_extension_events{suffix}"
         ),
         F.sum(
             F.when(
@@ -104,7 +104,7 @@ def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months:
                 & (F.col("parameter_2") == 0),
                 1,
             ).otherwise(0)
-        ).alias(f"cnt_checkvehicle_but_no_vehicle{suffix}"),
+        ).alias(f"app_cnt_checkvehicle_but_no_vehicle{suffix}"),
         F.round(
             F.try_divide(
                 F.sum(
@@ -121,18 +121,18 @@ def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months:
                 ),
             ),
             2,
-        ).alias(f"ratio_checkvehicle_but_no_vehicle{suffix}"),
+        ).alias(f"app_ratio_checkvehicle_but_no_vehicle{suffix}"),
         # duration between sessions
         F.min(
             F.when(F.col("time_diff_min") < SESSION_TIMEOUT, None).otherwise(
                 F.col("time_diff_min")
             )
-        ).alias(f"min_duration_btw_session_min{suffix}"),
+        ).alias(f"app_min_duration_btw_session_min{suffix}"),
         F.max(
             F.when(F.col("time_diff_min") < SESSION_TIMEOUT, None).otherwise(
                 F.col("time_diff_min")
             )
-        ).alias(f"max_duration_btw_session_min{suffix}"),
+        ).alias(f"app_max_duration_btw_session_min{suffix}"),
         F.round(
             F.avg(
                 F.when(F.col("time_diff_min") < SESSION_TIMEOUT, None).otherwise(
@@ -140,7 +140,7 @@ def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months:
                 )
             ),
             2,
-        ).alias(f"avg_duration_btw_session_min{suffix}"),
+        ).alias(f"app_avg_duration_btw_session_min{suffix}"),
         F.round(
             F.stddev(
                 F.when(F.col("time_diff_min") < SESSION_TIMEOUT, None).otherwise(
@@ -148,18 +148,18 @@ def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months:
                 )
             ),
             2,
-        ).alias(f"stddev_duration_btw_session_min{suffix}"),
+        ).alias(f"app_stddev_duration_btw_session_min{suffix}"),
         # duration within sessions
         F.min(
             F.when(F.col("time_diff_min") >= SESSION_TIMEOUT, None).otherwise(
                 F.col("time_diff_min")
             )
-        ).alias(f"min_duration_within_session_min{suffix}"),
+        ).alias(f"app_min_duration_within_session_min{suffix}"),
         F.max(
             F.when(F.col("time_diff_min") >= SESSION_TIMEOUT, None).otherwise(
                 F.col("time_diff_min")
             )
-        ).alias(f"max_duration_within_session_min{suffix}"),
+        ).alias(f"app_max_duration_within_session_min{suffix}"),
         F.round(
             F.avg(
                 F.when(F.col("time_diff_min") >= SESSION_TIMEOUT, None).otherwise(
@@ -167,7 +167,7 @@ def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months:
                 )
             ),
             2,
-        ).alias(f"avg_duration_within_session_min{suffix}"),
+        ).alias(f"app_avg_duration_within_session_min{suffix}"),
         F.round(
             F.stddev(
                 F.when(F.col("time_diff_min") >= SESSION_TIMEOUT, None).otherwise(
@@ -175,7 +175,7 @@ def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months:
                 )
             ),
             2,
-        ).alias(f"stddev_duration_within_session_min{suffix}"),
+        ).alias(f"app_stddev_duration_within_session_min{suffix}"),
         # station stats
         F.sum(
             F.when(
@@ -183,14 +183,14 @@ def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months:
                 & (F.col("event_type") == "checkavailablevehiclelist"),
                 1,
             ).otherwise(0)
-        ).alias(f"cnt_check_station_in_bangkok{suffix}"),
+        ).alias(f"app_cnt_check_station_in_bangkok{suffix}"),
         F.sum(
             F.when(
                 (F.col("province") != "Bangkok")
                 & (F.col("event_type") == "checkavailablevehiclelist"),
                 1,
             ).otherwise(0)
-        ).alias(f"cnt_check_station_not_in_bangkok{suffix}"),
+        ).alias(f"app_cnt_check_station_not_in_bangkok{suffix}"),
         F.round(
             F.try_divide(
                 F.sum(
@@ -207,56 +207,56 @@ def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months:
                 ),
             ),
             2,
-        ).alias(f"ratio_check_station_in_bangkok{suffix}"),
+        ).alias(f"app_ratio_check_station_in_bangkok{suffix}"),
         # station poi stats: means
         F.round(F.mean("perc_poi_cnt_daily_life"), 4).alias(
-            f"avg_poi_daily_life{suffix}"
+            f"app_avg_poi_daily_life{suffix}"
         ),
-        F.round(F.mean("perc_poi_cnt_shopping"), 4).alias(f"avg_poi_shopping{suffix}"),
-        F.round(F.mean("perc_poi_cnt_leisure"), 4).alias(f"avg_poi_leisure{suffix}"),
+        F.round(F.mean("perc_poi_cnt_shopping"), 4).alias(f"app_avg_poi_shopping{suffix}"),
+        F.round(F.mean("perc_poi_cnt_leisure"), 4).alias(f"app_avg_poi_leisure{suffix}"),
         F.round(F.mean("perc_poi_cnt_travel_tourism"), 4).alias(
-            f"avg_poi_travel_tourism{suffix}"
+            f"app_avg_poi_travel_tourism{suffix}"
         ),
         # stddev
         F.round(F.stddev("perc_poi_cnt_daily_life"), 4).alias(
-            f"std_poi_daily_life{suffix}"
+            f"app_std_poi_daily_life{suffix}"
         ),
         F.round(F.stddev("perc_poi_cnt_shopping"), 4).alias(
-            f"std_poi_shopping{suffix}"
+            f"app_std_poi_shopping{suffix}"
         ),
-        F.round(F.stddev("perc_poi_cnt_leisure"), 4).alias(f"std_poi_leisure{suffix}"),
+        F.round(F.stddev("perc_poi_cnt_leisure"), 4).alias(f"app_std_poi_leisure{suffix}"),
         F.round(F.stddev("perc_poi_cnt_travel_tourism"), 4).alias(
-            f"std_poi_travel_tourism{suffix}"
+            f"app_std_poi_travel_tourism{suffix}"
         ),
         # max / min
         F.round(F.max("perc_poi_cnt_daily_life"), 4).alias(
-            f"max_poi_daily_life{suffix}"
+            f"app_max_poi_daily_life{suffix}"
         ),
-        F.round(F.max("perc_poi_cnt_shopping"), 4).alias(f"max_poi_shopping{suffix}"),
-        F.round(F.max("perc_poi_cnt_leisure"), 4).alias(f"max_poi_leisure{suffix}"),
+        F.round(F.max("perc_poi_cnt_shopping"), 4).alias(f"app_max_poi_shopping{suffix}"),
+        F.round(F.max("perc_poi_cnt_leisure"), 4).alias(f"app_max_poi_leisure{suffix}"),
         F.round(F.max("perc_poi_cnt_travel_tourism"), 4).alias(
-            f"max_poi_travel_tourism{suffix}"
+            f"app_max_poi_travel_tourism{suffix}"
         ),
         F.round(F.min("perc_poi_cnt_daily_life"), 4).alias(
-            f"min_poi_daily_life{suffix}"
+            f"app_min_poi_daily_life{suffix}"
         ),
-        F.round(F.min("perc_poi_cnt_shopping"), 4).alias(f"min_poi_shopping{suffix}"),
-        F.round(F.min("perc_poi_cnt_leisure"), 4).alias(f"min_poi_leisure{suffix}"),
+        F.round(F.min("perc_poi_cnt_shopping"), 4).alias(f"app_min_poi_shopping{suffix}"),
+        F.round(F.min("perc_poi_cnt_leisure"), 4).alias(f"app_min_poi_leisure{suffix}"),
         F.round(F.min("perc_poi_cnt_travel_tourism"), 4).alias(
-            f"min_poi_travel_tourism{suffix}"
+            f"app_min_poi_travel_tourism{suffix}"
         ),
         # dominant category counts
         F.sum((F.col("dominant_poi_type") == "daily_life").cast("int")).alias(
-            f"cnt_dominant_daily_life{suffix}"
+            f"app_cnt_dominant_daily_life{suffix}"
         ),
         F.sum((F.col("dominant_poi_type") == "shopping").cast("int")).alias(
-            f"cnt_dominant_shopping{suffix}"
+            f"app_cnt_dominant_shopping{suffix}"
         ),
         F.sum((F.col("dominant_poi_type") == "leisure").cast("int")).alias(
-            f"cnt_dominant_leisure{suffix}"
+            f"app_cnt_dominant_leisure{suffix}"
         ),
         F.sum((F.col("dominant_poi_type") == "travel_tourism").cast("int")).alias(
-            f"cnt_dominant_travel{suffix}"
+            f"app_cnt_dominant_travel{suffix}"
         ),
         # dominant category ratios
         F.round(
@@ -265,30 +265,30 @@ def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months:
                 F.count("dominant_poi_type"),
             ),
             4,
-        ).alias(f"ratio_dominant_daily_life{suffix}"),
+        ).alias(f"app_ratio_dominant_daily_life{suffix}"),
         F.round(
             F.try_divide(
                 F.sum((F.col("dominant_poi_type") == "shopping").cast("int")),
                 F.count("dominant_poi_type"),
             ),
             4,
-        ).alias(f"ratio_dominant_shopping{suffix}"),
+        ).alias(f"app_ratio_dominant_shopping{suffix}"),
         F.round(
             F.try_divide(
                 F.sum((F.col("dominant_poi_type") == "leisure").cast("int")),
                 F.count("dominant_poi_type"),
             ),
             4,
-        ).alias(f"ratio_dominant_leisure{suffix}"),
+        ).alias(f"app_ratio_dominant_leisure{suffix}"),
         F.round(
             F.try_divide(
                 F.sum((F.col("dominant_poi_type") == "travel_tourism").cast("int")),
                 F.count("dominant_poi_type"),
             ),
             4,
-        ).alias(f"ratio_dominant_travel{suffix}"),
+        ).alias(f"app_ratio_dominant_travel{suffix}"),
         # entropy mean
-        F.round(F.mean("entropy"), 4).alias(f"avg_poi_entropy{suffix}"),
+        F.round(F.mean("entropy"), 4).alias(f"app_avg_poi_entropy{suffix}"),
     )
 
     return _fill_nulls_and_cast(agg_df)
