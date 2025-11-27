@@ -7,8 +7,7 @@ and distance imputation for churn prediction modeling.
 
 # import necessary libraries
 from typing import List, Tuple
-from pyspark.sql import functions as F
-from pyspark.sql import DataFrame
+from pyspark.sql import DataFrame, Window, functions as F
 from sklearn.linear_model import LinearRegression
 from datetime import datetime
 from pathlib import Path
@@ -33,7 +32,7 @@ def distance_imputation(base_df: DataFrame) -> DataFrame:
     """
     Impute missing distance values using linear regression.
 
-    Uses duration_hour as a predictor to fill in missing distance values
+    Uses trip_hour as a predictor to fill in missing distance values
     via a trained linear regression model.
 
     Args:
@@ -131,6 +130,41 @@ def _pivot_and_summarize(
         logger.error(f"Error during pivot and summarize for {pivot_col}: {e}")
         raise
 
+def clean_registed_time(base_df: DataFrame) -> DataFrame:
+    """
+    Clean and impute missing registed_time values.
+
+    Imputes missing registed_time with the earliest txn_ts per user.
+
+    Args:
+        base_df: Input Spark DataFrame with registed_time.
+    
+    Returns:
+        DataFrame with cleaned registed_time.
+    """
+    logger.info("Starting registed_time cleaning and imputation")
+    try:
+        logger.debug("Calculating earliest txn_ts per user for imputation")
+        imputed_registed_time_df = base_df.groupBy("user_id").agg(
+            F.min(F.col("txn_ts")).alias("imputed_registed_time")
+        )
+        
+        logger.debug("Imputing missing registed_time values")
+        base_df = base_df.join(
+            imputed_registed_time_df, on="user_id", how="left"
+        ).withColumn(
+            "registed_time",
+            F.when(
+                F.col("registed_time").isNull(), F.col("imputed_registed_time")
+            ).otherwise(F.col("registed_time")),
+        ).drop("imputed_registed_time")
+        
+        logger.info("registed_time cleaning and imputation completed successfully")
+        return base_df
+    except Exception as e:
+        logger.error(f"Error during registed_time cleaning: {e}")
+        raise
+
 def reservation_date_features(
     base_df: DataFrame, holiday_master_df: DataFrame
 ) -> DataFrame:
@@ -215,6 +249,42 @@ def reservation_date_features(
         logger.error(f"Error during reservation date features extraction: {e}")
         raise
 
+def add_time_difference_column(
+    df: DataFrame,
+    partition_col: str = "user_id",
+    order_col: str = "txn_ts",
+    output_col: str = "days_btw_reservations"
+) -> DataFrame:
+    """
+    Calculate time difference in minutes between consecutive events per user.
+    
+    Args:
+        df: Input Spark DataFrame
+        partition_col: Column to partition by (typically user_id)
+        order_col: Column to order by (typically timestamp)
+        output_col: Name of output column
+    
+    Returns:
+        DataFrame with time difference column added
+    """
+    window_spec = Window.partitionBy(partition_col).orderBy(order_col)
+    
+    return (df
+        .withColumn(
+            "previous_ts",
+            F.lag(order_col).over(window_spec)
+        )
+        .withColumn(
+            output_col,
+            F.round(
+                (F.col(order_col).cast('long') - F.col('previous_ts').cast('long')) 
+                / 60 / 60 / 24,
+                2
+            )
+        )
+        .drop('previous_ts')
+    )
+
 def _prepare_base_dataframe(
     reservation_txn_fact_df: DataFrame,
     customer_profile_dim_df: DataFrame,
@@ -294,9 +364,9 @@ def _add_duration_features(base_df: DataFrame) -> DataFrame:
     """
     logger.info("Adding duration features")
     try:
-        logger.debug("Calculating duration_hour feature")
+        logger.debug("Calculating trip_hour feature")
         base_df = base_df.withColumn(
-            "duration_hour",
+            "trip_hour",
             F.round(
                 (F.col("reserve_stop_time").cast("long") - F.col("reserve_start_time").cast("long")) / 3600,
                 2,
@@ -304,7 +374,7 @@ def _add_duration_features(base_df: DataFrame) -> DataFrame:
         )
         
         initial_count = base_df.count()
-        base_df = base_df.filter(F.col("duration_hour") < 720)
+        base_df = base_df.filter(F.col("trip_hour") < 720)
         after_filter_count = base_df.count()
         logger.info(f"Duration filter applied: removed {initial_count - after_filter_count} rows with duration >= 720 hours")
         
@@ -313,7 +383,7 @@ def _add_duration_features(base_df: DataFrame) -> DataFrame:
         base_df = base_df.withColumn(
             "distance",
             F.when(
-                (F.col("distance") > 4000) & (F.col("duration_hour") < 600), None
+                (F.col("distance") > 4000) & (F.col("trip_hour") < 600), None
             ).otherwise(F.col("distance")),
         )
         logger.info("Duration features added successfully")
@@ -378,6 +448,7 @@ class ReservationBehavioralFeatures:
             customer_group_dim_df = load_data(input.get('customer_group_dim').get('file_path'))            
             station_location_profile_feat_df = load_data(input.get('station_location_profile_feat').get('file_path'))            
             holiday_master_df = load_data(input.get('holiday_master').get('file_path'))
+            
             # Prepare and filter base data
             logger.info("Preparing base dataframe")
             base_df = _prepare_base_dataframe(
@@ -406,10 +477,24 @@ class ReservationBehavioralFeatures:
             logger.info("Adding reservation date features")
             base_df = reservation_date_features(base_df, holiday_master_df)
 
+            # Clean total_price
+            base_df = base_df.withColumn("total_price", F.col("hour_price") + F.col("distance_price") - F.col("discount"))
+
+            # Clean registed_time
+            logger.info("Cleaning registed_time features")
+            base_df = clean_registed_time(base_df)
+
             # Add booking lead time
             logger.info("Adding booking lead time features")
             base_df = _add_booking_lead_time(base_df)
-            logger.debug(f"Booking lead time features added")
+
+            # Add days between reservations
+            base_df = add_time_difference_column(
+                base_df,
+                partition_col="user_id",
+                order_col="txn_ts",
+                output_col="days_btw_reservations"
+            )
 
             # Flag save time
             base_df = base_df.withColumn("dl_data_dt", F.lit(self.execution_date).cast('date'))

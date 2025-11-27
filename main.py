@@ -63,7 +63,7 @@ def main():
     try:
         parser = argparse.ArgumentParser()
         parser.add_argument("config_path", type=str, help="Path to the configuration file.")
-        parser.add_argument("--execution_date", type=str, default=None, help="Execution date for the pipeline run.", required=False)
+        parser.add_argument("--execution_date", "-e", type=str, default=None, help="Execution date for the pipeline run.", required=False)
         args = parser.parse_args()
 
         execute(

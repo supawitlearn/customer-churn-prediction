@@ -8,4 +8,4 @@ EVENT_TYPE_MAPPING = {
     'confirmreservation' : ['ws:confirmreservation','mobilews:confirmreservation','webws:confirmreservation']
 }
 SESSION_TIMEOUT = 6
-WINDOW_SIZE = 3 # in months
+ACTIVE_EVENTS = ['confirmextension','mobilews:estimatereservation','checkavailablevehiclelist','confirmreservation','getstationlist','mobilews:getstationvehiclelist','cancelreservation''estimateextension','mobilews:estimateaddonservice','ws:estimatereservation']

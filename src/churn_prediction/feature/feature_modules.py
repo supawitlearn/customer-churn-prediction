@@ -2,6 +2,8 @@ from src.churn_prediction.feature.station_location_profile_feat import StationLo
 from src.churn_prediction.feature.reservation_behavioral_feat import ReservationBehavioralFeatures
 from src.churn_prediction.feature.app_behavior_feat import AppBehaviorFeatures
 from src.churn_prediction.feature.customer_app_behavior_feat import CustomerAppBehaviorFeatures
+from src.churn_prediction.feature.customer_reservation_behavior_feat import CustomerReservationBehaviorFeatures
+from src.churn_prediction.feature.customer_active_feat import CustomerActiveFeatures
 
 def feature_modules(
 ) -> dict:
@@ -16,4 +18,6 @@ def feature_modules(
         "ReservationBehavioralFeatures": ReservationBehavioralFeatures,
         "AppBehaviorFeatures": AppBehaviorFeatures,
         "CustomerAppBehaviorFeatures": CustomerAppBehaviorFeatures,
+        "CustomerReservationBehaviorFeatures": CustomerReservationBehaviorFeatures,
+        "CustomerActiveFeatures": CustomerActiveFeatures,
     }

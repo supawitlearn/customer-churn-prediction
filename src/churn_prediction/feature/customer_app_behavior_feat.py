@@ -6,41 +6,12 @@ from pyspark.sql import DataFrame, functions as F
 
 # import project modules
 from src.churn_prediction.logger import logger
-from src.churn_prediction.constants.feature_engineering.app_const import SESSION_TIMEOUT, WINDOW_SIZE
+from src.churn_prediction.constants.feature_engineering.app_const import SESSION_TIMEOUT
+from src.churn_prediction.constants.feature_engineering.churn_const import OBSERVE_PERIOD, ACTIVE_PERIOD
 from src.churn_prediction.pydantic.pipeline_config import PipelineConfig
-from src.churn_prediction.utils.common import load_single_config, get_execution_date, get_spark
+from src.churn_prediction.utils.common import load_single_config, get_execution_date, get_spark, start_of_month_n_months_ago, end_of_month_n_months_ago
 from src.churn_prediction.utils.loaders import load_data
 from src.churn_prediction.utils.writers import write_data
-
-def _first_day_n_months_ago(input_date: date, n: int) -> date:
-    """
-    Return the first day of the month that is `n` months before `input_date`.
-    """
-    # Normalize to first of current month
-    first_this_month = input_date.replace(day=1)
-
-    # Month arithmetic (1–12)
-    month_index = first_this_month.month + 1 - n  # can be <= 0
-    year = first_this_month.year
-    while month_index <= 0:
-        month_index += 12
-        year -= 1
-
-    return date(year, month_index, 1)
-
-
-def start_of_month_n_months_ago(date_str: str, n: int = 3) -> str:
-    """
-    Return the start-of-month timestamp string (YYYY-MM-DD HH:MM:SS)
-    for the month that is `n` months before the month of `date_str`.
-
-    Example:
-        date_str = '2025-09-30', n = 3  -> '2025-06-01 00:00:00'
-    """
-    d = datetime.strptime(date_str, "%Y-%m-%d").date()
-    first_target_month = _first_day_n_months_ago(d, n)
-    # explicitly start at midnight
-    return f"{first_target_month.strftime('%Y-%m-%d')} 00:00:00"
 
 
 def _fill_nulls_and_cast(agg_df: DataFrame) -> DataFrame:
@@ -70,6 +41,23 @@ def _fill_nulls_and_cast(agg_df: DataFrame) -> DataFrame:
             agg_df = agg_df.withColumn(column, F.col(column).cast("decimal(28,4)"))
 
     return agg_df
+
+
+def _get_last_active_df(base_df: DataFrame, execution_date: str) -> DataFrame:
+    """
+    Build last active feature DataFrame.
+
+    Args:
+        base_df (DataFrame): Base DataFrame filtered by execution date.
+
+    Returns:
+        DataFrame: DataFrame with last active timestamp and days since last active.
+    """
+    last_active_df = base_df.groupBy('user_id').agg(F.max('app_log_ts').alias('last_active_ts'))
+    last_active_df = last_active_df.withColumn('days_since_last_active', F.datediff(F.lit(execution_date), F.col('last_active_ts')).cast("int"))
+    last_active_df = last_active_df.drop('last_active_ts')
+
+    return last_active_df
 
 
 def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months: int) -> DataFrame:
@@ -183,14 +171,14 @@ def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months:
                 & (F.col("event_type") == "checkavailablevehiclelist"),
                 1,
             ).otherwise(0)
-        ).alias(f"app_cnt_check_station_in_bangkok{suffix}"),
+        ).alias(f"app_cnt_check_station_in_bkk{suffix}"),
         F.sum(
             F.when(
                 (F.col("province") != "Bangkok")
                 & (F.col("event_type") == "checkavailablevehiclelist"),
                 1,
             ).otherwise(0)
-        ).alias(f"app_cnt_check_station_not_in_bangkok{suffix}"),
+        ).alias(f"app_cnt_check_station_outside_bkk{suffix}"),
         F.round(
             F.try_divide(
                 F.sum(
@@ -207,7 +195,7 @@ def _build_agg_for_window(app_feat_df: DataFrame, execution_date: str, n_months:
                 ),
             ),
             2,
-        ).alias(f"app_ratio_check_station_in_bangkok{suffix}"),
+        ).alias(f"app_ratio_check_station_in_bkk{suffix}"),
         # station poi stats: means
         F.round(F.mean("perc_poi_cnt_daily_life"), 4).alias(
             f"app_avg_poi_daily_life{suffix}"
@@ -299,8 +287,19 @@ class CustomerAppBehaviorFeatures:
     """
 
     def __init__(self, config_path: Path, execution_date: Optional[str] = None) -> None:
+        """
+        Parameters
+        ----------
+        config_path : Path
+            Path to the pipeline configuration file.
+        execution_date : str, optional
+            As-of date in 'YYYY-MM-DD' format. If None, uses get_execution_date()
+            to infer the last day of the previous month.
+        """
         self.spark = get_spark()
+        # Allow large schema debug in logs when needed
         self.spark.conf.set("spark.sql.debug.maxToStringFields", "1000")
+
         self.config_path = config_path
         self.execution_date = get_execution_date(execution_date)
 
@@ -319,26 +318,41 @@ class CustomerAppBehaviorFeatures:
             output = pipeline_config.feature_engineering.output
 
             # Load data
-            app_feat_df = load_data(input.get('app_behavior_feat').get('file_path')).drop('dl_data_dt','dl_load_ts')   
-            start_date = start_of_month_n_months_ago(self.execution_date, WINDOW_SIZE)
+            app_feat_df = load_data(input.get('app_behavior_feat').get('file_path')).drop('dl_data_dt','dl_load_ts')  
+            cust_active_feat_df = load_data(input.get('customer_active_feat').get('file_path').replace('${execution_date}', self.execution_date)).drop('dl_data_dt','dl_load_ts')
+
+            # Global observation window filter
+            observ_start_date = start_of_month_n_months_ago(self.execution_date , OBSERVE_PERIOD)
+            observ_end_date = end_of_month_n_months_ago(self.execution_date , 0)
             app_feat_df = app_feat_df.filter(
-                (F.col("app_log_ts") < self.execution_date) & (F.col("app_log_ts") >= start_date)
+                (F.col("app_log_ts") <= observ_end_date)
+                & (F.col("app_log_ts") >= observ_start_date)
             )
+
+            # Filter active users only
+            app_feat_df = app_feat_df.join(F.broadcast(cust_active_feat_df), on="user_id", how="inner")
 
             agg_df_list: List[DataFrame] = []
 
-            for i in range(1, WINDOW_SIZE + 1):
+            for i in range(1, OBSERVE_PERIOD + 1):
                 agg_df = _build_agg_for_window(app_feat_df, self.execution_date, i)
                 agg_df_list.append(agg_df)
 
-            # Iteratively left-join on user_id
+            # Iteratively outer-join on user_id
             result_df = agg_df_list[0]
             for df in agg_df_list[1:]:
-                result_df = result_df.join(df, on="user_id", how="left")
-            
-            # Flag save time
-            result_df = result_df.withColumn("dl_data_dt", F.lit(self.execution_date).cast('date'))
-            result_df = result_df.withColumn("dl_load_ts", F.lit(datetime.now()))
+                result_df = result_df.join(df, on="user_id", how="outer")
+
+            # Last active features
+            last_active_df = _get_last_active_df(app_feat_df, self.execution_date)
+            result_df = result_df.join(F.broadcast(last_active_df), on="user_id", how="left")
+
+            # Add load metadata
+            result_df = (
+                result_df
+                .withColumn("dl_data_dt", F.lit(self.execution_date).cast("date"))
+                .withColumn("dl_load_ts", F.lit(datetime.now()))
+            )
 
             # Write data
             write_data(result_df, output.get('file_path').replace('${execution_date}', self.execution_date))

@@ -1,23 +1,23 @@
 # ============================================================================
-# Customer App Behavior Feature Data Source Configuration
+# Customer Reservation Behavior Feature Data Source Configuration
 # ============================================================================
 
 # Version: 1.0
 # Last Updated: 2025-11-14
 # Owner: Data Engineering Team
 # ============================================================================
-name: "customer_app_behavior_feat"
+name: "customer_reservation_behavior_feat"
 version: "1.0"
 # ============================================================================
 feature_engineering:
-  module: 'CustomerAppBehaviorFeatures'
+  module: 'CustomerReservationBehaviorFeatures'
   input:
-    app_behavior_feat:
+    reservation_behavioral_feat:
       type: Local
-      file_path: 'data/feature/app_behavior_feat'
+      file_path: 'data/feature/reservation_behavioral_feat'
     customer_active_feat:
       type: Local
       file_path: 'data/feature/customer_active_feat/${execution_date}'
   output:
     type: Local
-    file_path: 'data/feature/customer_app_behavior_feat/${execution_date}'
+    file_path: 'data/feature/customer_reservation_behavior_feat/${execution_date}'
